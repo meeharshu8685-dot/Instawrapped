@@ -49,6 +49,11 @@ export interface Capabilities {
 }
 
 export interface WrappedStats {
+  debug?: {
+    totalRawMessages: number;
+    excludedMessages: number;
+    mergedConversationsCount: number;
+  };
   selectedExportRange: ExportRange;
   actualDateRange: { earliest: number; latest: number; formattedDuration: string } | null;
   capabilities: Capabilities;

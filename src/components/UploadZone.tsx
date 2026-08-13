@@ -147,6 +147,24 @@ const UploadZone: React.FC<Props> = ({ onDataLoaded, exportRange }) => {
                   Show my Wrapped
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </button>
+
+                {import.meta.env.DEV && (
+                  <div className="mt-8 p-4 bg-black/50 border border-white/20 rounded-xl w-full text-left text-xs font-mono overflow-y-auto max-h-64">
+                    <div className="text-insta-pink font-bold mb-2">DEBUG PANEL</div>
+                    <div>Total raw messages: {analyzedStats.debug?.totalRawMessages}</div>
+                    <div>Total normalized messages: {analyzedStats.totalMessages}</div>
+                    <div>Excluded messages: {analyzedStats.debug?.excludedMessages}</div>
+                    <div>Duplicate messages: 0</div>
+                    <div>Conversations: {analyzedStats.debug?.mergedConversationsCount}</div>
+                    <div>Unique participants: {analyzedStats.uniqueContacts}</div>
+                    <div>Earliest timestamp: {analyzedStats.actualDateRange ? new Date(analyzedStats.actualDateRange.earliest).toLocaleString() : 'N/A'}</div>
+                    <div>Latest timestamp: {analyzedStats.actualDateRange ? new Date(analyzedStats.actualDateRange.latest).toLocaleString() : 'N/A'}</div>
+                    <div className="mt-2 font-bold">Top 10 connections:</div>
+                    {analyzedStats.topConnections.map((c, i) => (
+                      <div key={i}>{i+1}. {c.name} ({c.messageCount} msgs, {c.interactionScore} score)</div>
+                    ))}
+                  </div>
+                )}
               </motion.div>
             )}
 

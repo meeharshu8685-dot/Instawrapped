@@ -18,6 +18,8 @@ export const calculateStats = (conversations: InstaConversation[], exportRange: 
   let messagesReceived = 0;
   let reelsShared = 0;
   let mediaSharedTotal = 0;
+  let excludedMessages = 0;
+  let totalRawMessages = 0;
 
   const connectionsMap = new Map<string, ConnectionStat>();
   const activeMonths = new Map<string, number>();
@@ -41,18 +43,72 @@ export const calculateStats = (conversations: InstaConversation[], exportRange: 
   // Midnight Connection (12am - 4am)
   let midnightCounts = new Map<string, number>();
 
+  // Merge split conversation files for the same participant to fix overwriting
+  const mergedConversations = new Map<string, InstaConversation>();
+  
   for (const convo of conversations) {
     if (!convo.messages || convo.messages.length === 0) continue;
-    caps.messages = true;
+    
+    const otherParticipant = convo.participants?.length === 2 
+      ? convo.participants[0].name 
+      : convo.title || 'Group Chat';
+      
+    const key = otherParticipant || 'Group Chat';
+    
+    if (mergedConversations.has(key)) {
+      mergedConversations.get(key)!.messages.push(...convo.messages);
+    } else {
+      mergedConversations.set(key, { ...convo, messages: [...convo.messages] });
+    }
+  }
+
+  // Calculate global earliest/latest BEFORE filtering, as requested for debug
+  for (const convo of mergedConversations.values()) {
+    for (const msg of convo.messages) {
+      if (msg.timestamp_ms) {
+        if (msg.timestamp_ms < earliest) earliest = msg.timestamp_ms;
+        if (msg.timestamp_ms > latest) latest = msg.timestamp_ms;
+      }
+    }
+  }
+
+  // Determine cutoff date based on exportRange
+  let cutoffMs = 0;
+  if (exportRange === '1_year') {
+    const oneYearAgo = new Date(latest);
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    cutoffMs = oneYearAgo.getTime();
+  } else if (exportRange === '6_months') {
+    const sixMonthsAgo = new Date(latest);
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    cutoffMs = sixMonthsAgo.getTime();
+  } else if (exportRange === '3_months') {
+    const threeMonthsAgo = new Date(latest);
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    cutoffMs = threeMonthsAgo.getTime();
+  }
+
+  for (const convo of mergedConversations.values()) {
+    totalRawMessages += convo.messages.length;
+    
+    // Ensure sorted messages for time-series analysis (oldest to newest)
+    // Fix: provide fallback 0 for timestamp to prevent NaN scrambling
+    let sortedMessages = [...convo.messages].sort((a, b) => (a.timestamp_ms || 0) - (b.timestamp_ms || 0));
+    
+    // Apply exportRange filtering
+    if (cutoffMs > 0) {
+      const originalCount = sortedMessages.length;
+      sortedMessages = sortedMessages.filter(m => (m.timestamp_ms || 0) >= cutoffMs);
+      excludedMessages += (originalCount - sortedMessages.length);
+    }
+    
+    if (sortedMessages.length === 0) continue;
     
     const otherParticipant = convo.participants?.length === 2 
       ? convo.participants[0].name 
       : convo.title || 'Group Chat';
     
     if (otherParticipant !== 'Group Chat') caps.participants = true;
-
-    // Ensure sorted messages for time-series analysis (oldest to newest)
-    const sortedMessages = [...convo.messages].sort((a, b) => a.timestamp_ms - b.timestamp_ms);
     
     let convoMessagesCount = 0;
     let convoMediaShared = 0;
@@ -97,9 +153,6 @@ export const calculateStats = (conversations: InstaConversation[], exportRange: 
       // Time Series
       if (msg.timestamp_ms) {
         caps.timestamps = true;
-        if (msg.timestamp_ms < earliest) earliest = msg.timestamp_ms;
-        if (msg.timestamp_ms > latest) latest = msg.timestamp_ms;
-        
         const date = new Date(msg.timestamp_ms);
         const monthKey = date.toLocaleString('default', { month: 'long' }).toUpperCase();
         const hour = date.getHours();
@@ -179,7 +232,7 @@ export const calculateStats = (conversations: InstaConversation[], exportRange: 
   // Finalize Connections
   const topConnections = Array.from(connectionsMap.values())
     .sort((a, b) => b.interactionScore - a.interactionScore)
-    .slice(0, 5);
+    .slice(0, 10);
 
   const mostConsistent = Array.from(connectionsMap.values())
     .sort((a, b) => b.activeDays - a.activeDays)[0];
@@ -257,6 +310,11 @@ export const calculateStats = (conversations: InstaConversation[], exportRange: 
   }
 
   return {
+    debug: {
+      totalRawMessages,
+      excludedMessages,
+      mergedConversationsCount: mergedConversations.size,
+    },
     selectedExportRange: exportRange,
     actualDateRange,
     capabilities: caps,
