@@ -13,10 +13,14 @@ interface Props {
   onDemoLoaded: () => void;
 }
 
+import HowItWorksPage from './HowItWorksPage';
+import PrivacyPage from './PrivacyPage';
+
 const LandingPage: React.FC<Props> = ({ stats, onViewWrapped, onDataLoaded, onDemoLoaded }) => {
   const [step, setStep] = useState<'selection' | 'upload'>('selection');
   const [exportRange, setExportRange] = useState<ExportRange>('all');
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const [activePage, setActivePage] = useState<'home' | 'how-it-works' | 'privacy'>('home');
   const uploadRef = useRef<HTMLDivElement>(null);
 
   const handleSelection = (range: ExportRange) => {
@@ -27,6 +31,14 @@ const LandingPage: React.FC<Props> = ({ stats, onViewWrapped, onDataLoaded, onDe
   const scrollToUpload = () => {
     uploadRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  if (activePage === 'how-it-works') {
+    return <HowItWorksPage onClose={() => setActivePage('home')} />;
+  }
+
+  if (activePage === 'privacy') {
+    return <PrivacyPage onClose={() => setActivePage('home')} />;
+  }
 
   return (
     <div className="w-full flex flex-col min-h-screen bg-[#050505] selection:bg-white/20">
@@ -126,7 +138,7 @@ const LandingPage: React.FC<Props> = ({ stats, onViewWrapped, onDataLoaded, onDe
       </section>
 
       {/* UPLOAD SECTION */}
-      <section ref={uploadRef} className="w-full bg-[#0a0a0a] py-48">
+      <section ref={uploadRef} className="w-full bg-[#0a0a0a] py-48 flex-1">
         <div className="max-w-4xl mx-auto px-8">
           {!stats && (
             <div className="relative">
@@ -160,52 +172,11 @@ const LandingPage: React.FC<Props> = ({ stats, onViewWrapped, onDataLoaded, onDe
         </div>
       </section>
 
-      {/* HOW IT WORKS - Typography Driven */}
-      <section id="how-it-works" className="w-full py-48">
-        <div className="max-w-7xl mx-auto px-8">
-          <div className="grid lg:grid-cols-3 gap-24">
-            <div className="space-y-8">
-              <div className="text-8xl font-bold text-white/5 tracking-tighter">01</div>
-              <h3 className="text-3xl font-bold">Download</h3>
-              <p className="text-xl text-white/40 leading-snug">Request your Instagram information in JSON format.</p>
-            </div>
-            <div className="space-y-8">
-              <div className="text-8xl font-bold text-white/5 tracking-tighter">02</div>
-              <h3 className="text-3xl font-bold">Upload</h3>
-              <p className="text-xl text-white/40 leading-snug">Drop your entire ZIP directly here. No extraction needed.</p>
-            </div>
-            <div className="space-y-8">
-              <div className="text-8xl font-bold text-white/5 tracking-tighter">03</div>
-              <h3 className="text-3xl font-bold">Discover</h3>
-              <p className="text-xl text-white/40 leading-snug">Experience your year in a beautiful, cinematic format.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* PRIVACY SECTION */}
-      <section className="w-full py-48 bg-[#0a0a0a]">
-        <div className="max-w-5xl mx-auto px-8 text-center space-y-16">
-          <h2 className="text-[4rem] lg:text-[6rem] font-bold tracking-tighter leading-none">
-            Your data stays yours.
-          </h2>
-          <div className="flex flex-col md:flex-row items-center justify-center gap-8 text-2xl font-medium text-white/40">
-            <span>Your ZIP</span>
-            <ArrowRight className="w-6 h-6 opacity-30 rotate-90 md:rotate-0" />
-            <span>Your Browser</span>
-            <ArrowRight className="w-6 h-6 opacity-30 rotate-90 md:rotate-0" />
-            <span className="text-white">Your Wrapped</span>
-          </div>
-          <p className="text-xl text-white/30 max-w-2xl mx-auto">
-            Zero cloud uploads. Zero database storage. Processed 100% locally on your device.
-          </p>
-        </div>
-      </section>
-
       {/* FOOTER */}
-      <footer className="w-full py-24 text-center">
-        <div className="flex justify-center gap-12 mb-16 text-lg font-bold text-white/30">
-          <button onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-white transition-colors">How it works</button>
+      <footer className="w-full py-24 text-center bg-[#0a0a0a]">
+        <div className="flex flex-wrap justify-center items-center gap-12 mb-16 text-lg font-bold text-white/30">
+          <button onClick={() => setActivePage('how-it-works')} className="hover:text-white transition-colors">How it works</button>
+          <button onClick={() => setActivePage('privacy')} className="hover:text-white transition-colors">Privacy</button>
           <button onClick={() => { if(stats) setShowShareMenu(true); else scrollToUpload(); }} className="hover:text-white transition-colors">Share</button>
         </div>
         <p className="text-white/20 font-medium">Made by Harshu with love 🤎</p>
