@@ -6,7 +6,7 @@ interface Props {
   showNames?: boolean;
 }
 
-const ShareCard: React.FC<Props> = ({ stats, showNames = true }) => {
+const ShareCard: React.FC<Props> = ({ stats }) => {
   // A 9:16 shareable card component - Purely editorial, one powerful idea.
   return (
     <div 

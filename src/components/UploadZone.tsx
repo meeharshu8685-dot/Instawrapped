@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { UploadCloud, AlertCircle, ArrowRight } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { AlertCircle, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { parseInstagramZip } from '../analytics/instagramParser';
 import { calculateStats } from '../analytics/statistics';
@@ -22,7 +22,6 @@ const PROCESSING_STEPS = [
 const UploadZone: React.FC<Props> = ({ onDataLoaded, exportRange }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [status, setStatus] = useState<'idle' | 'processing' | 'ready' | 'error'>('idle');
-  const [progressMsg, setProgressMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [analyzedStats, setAnalyzedStats] = useState<WrappedStats | null>(null);
   const [processingStepIndex, setProcessingStepIndex] = useState(0);
