@@ -6,6 +6,65 @@ import ShareCard from './ShareCard';
 import ShareMenu from './ShareMenu';
 import { LayoutGrid, Eye, EyeOff, Volume2, VolumeX, Share } from 'lucide-react';
 import { shareElementAsImage } from '../utils/shareUtils';
+
+const SLIDE_THEMES = [
+  '#405DE6', // 0: Intro (Royal Blue)
+  '#E1306C', // 1: Total (Vibrant Pink)
+  '#833AB4', // 2: Top People (Deep Purple)
+  '#009688', // 3: Late Night (Teal)
+  '#F56040', // 4: Ghost (Orange)
+  '#C13584', // 5: Blocked (Magenta)
+  '#FD1D1D', // 6: Emojis (Red)
+  '#5851DB', // 7: Archetype (Indigo)
+  '#0A0A0A'  // 8: End
+];
+
+const SLIDE_MARQUEES = [
+  'INSTA WRAPPED 2026',
+  'TOTAL MESSAGES SENT',
+  'TOP FRIENDS',
+  'LATE NIGHT CHATS',
+  'GHOSTED',
+  'BLOCKED',
+  'TOP EMOJIS',
+  'YOUR ARCHETYPE',
+  ''
+];
+
+const ScrollingMarquee = ({ text }: { text: string }) => {
+  if (!text) return null;
+  return (
+    <div className="absolute inset-0 overflow-hidden flex flex-col justify-center opacity-[0.07] pointer-events-none select-none z-0 mix-blend-overlay">
+      {[...Array(6)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="whitespace-nowrap font-black text-[15vw] uppercase leading-[0.85] tracking-tighter"
+          initial={{ x: i % 2 === 0 ? '0%' : '-50%' }}
+          animate={{ x: i % 2 === 0 ? '-50%' : '0%' }}
+          transition={{ duration: 25 + i * 2, repeat: Infinity, ease: 'linear' }}
+        >
+          {text} • {text} • {text} • {text} • {text} • {text}
+        </motion.div>
+      ))}
+    </div>
+  );
+};
+
+const GeometricMotifs = () => (
+  <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-30 mix-blend-overlay">
+    <motion.div 
+      className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-white blur-3xl"
+      animate={{ scale: [1, 1.2, 1], rotate: [0, 90, 0] }}
+      transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+    />
+    <motion.div 
+      className="absolute bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] rounded-full bg-black blur-3xl"
+      animate={{ scale: [1, 1.5, 1], rotate: [0, -90, 0] }}
+      transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
+    />
+  </div>
+);
+
 interface SlideProps {
   stats: WrappedStats;
   showNames?: boolean;
@@ -185,8 +244,10 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
   };
 
   return (
-    <div 
-      className="fixed inset-0 bg-[#020202] text-white select-none overflow-hidden touch-none"
+    <motion.div 
+      className="fixed inset-0 text-white select-none overflow-hidden touch-none"
+      animate={{ backgroundColor: SLIDE_THEMES[currentSlide % SLIDE_THEMES.length] }}
+      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       onPointerDown={(e) => {
         if ((e.target as HTMLElement).closest('.controls-layer')) return;
         setIsPaused(true);
@@ -202,25 +263,15 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
         )}
       </AnimatePresence>
       
-      {/* Background Ambience (Parallax) */}
+      {/* Dynamic Background Ambience */}
       <motion.div 
         className="absolute inset-0 z-0"
         animate={{ x: mousePos.x, y: mousePos.y }}
         transition={{ type: 'spring', damping: 40, stiffness: 100 }}
       >
         <div className="absolute inset-0 bg-grain opacity-20 mix-blend-overlay" />
-        <motion.div 
-          animate={{ 
-            background: [
-              'radial-gradient(circle at 0% 0%, rgba(131,58,180,0.15) 0%, transparent 60%)',
-              'radial-gradient(circle at 100% 100%, rgba(253,29,29,0.15) 0%, transparent 60%)',
-              'radial-gradient(circle at 0% 100%, rgba(252,176,69,0.15) 0%, transparent 60%)',
-              'radial-gradient(circle at 100% 0%, rgba(225,48,108,0.15) 0%, transparent 60%)'
-            ]
-          }}
-          transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
-          className="absolute inset-0"
-        />
+        <GeometricMotifs />
+        <ScrollingMarquee text={SLIDE_MARQUEES[currentSlide % SLIDE_MARQUEES.length]} />
       </motion.div>
 
       {/* Progress Bars (Top) */}
@@ -292,11 +343,11 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
             <motion.div
               key={currentSlide}
               custom={direction}
-              initial={{ opacity: 0, x: direction * 50, filter: 'blur(10px)', scale: 0.95 }}
+              initial={{ opacity: 0, x: direction * 50, filter: 'blur(5px)', scale: 0.9 }}
               animate={{ opacity: 1, x: 0, filter: 'blur(0px)', scale: 1 }}
-              exit={{ opacity: 0, x: direction * -50, filter: 'blur(10px)', scale: 1.05 }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className={`w-full h-full flex flex-col items-center justify-center p-6 pointer-events-auto transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isPaused && !isSharingSlide ? 'scale-[0.96] opacity-90' : 'scale-100'}`}
+              exit={{ opacity: 0, x: direction * -50, filter: 'blur(5px)', scale: 1.1 }}
+              transition={{ duration: 0.4, ease: [0.25, 1, 0.5, 1] }}
+              className={`w-full h-full flex flex-col items-center justify-center p-6 pointer-events-auto transition-transform duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] ${isPaused && !isSharingSlide ? 'scale-[0.98] opacity-90' : 'scale-100'}`}
               drag="x"
               dragConstraints={{ left: 0, right: 0 }}
               dragElastic={0.2}
@@ -318,7 +369,7 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
           </AnimatePresence>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
