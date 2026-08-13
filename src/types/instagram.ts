@@ -37,6 +37,8 @@ export interface MediaStat {
   confidence: 'high' | 'medium' | 'low';
 }
 
+export type ExportRange = 'all' | '1_year' | '6_months' | '3_months';
+
 export interface Capabilities {
   messages: boolean;
   timestamps: boolean;
@@ -47,6 +49,8 @@ export interface Capabilities {
 }
 
 export interface WrappedStats {
+  selectedExportRange: ExportRange;
+  actualDateRange: { earliest: number; latest: number; formattedDuration: string } | null;
   capabilities: Capabilities;
   totalMessages: number;
   messagesSent: number;

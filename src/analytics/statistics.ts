@@ -1,6 +1,6 @@
-import type { ConnectionStat, InstaConversation, WrappedStats, Capabilities } from '../types/instagram';
+import type { ConnectionStat, InstaConversation, WrappedStats, Capabilities, ExportRange } from '../types/instagram';
 
-export const calculateStats = (conversations: InstaConversation[]): WrappedStats => {
+export const calculateStats = (conversations: InstaConversation[], exportRange: ExportRange): WrappedStats => {
   const caps: Capabilities = {
     messages: false,
     timestamps: false,
@@ -9,6 +9,9 @@ export const calculateStats = (conversations: InstaConversation[]): WrappedStats
     reels: false,
     reactions: false,
   };
+
+  let earliest = Infinity;
+  let latest = 0;
 
   let totalMessages = 0;
   let messagesSent = 0;
@@ -94,6 +97,9 @@ export const calculateStats = (conversations: InstaConversation[]): WrappedStats
       // Time Series
       if (msg.timestamp_ms) {
         caps.timestamps = true;
+        if (msg.timestamp_ms < earliest) earliest = msg.timestamp_ms;
+        if (msg.timestamp_ms > latest) latest = msg.timestamp_ms;
+        
         const date = new Date(msg.timestamp_ms);
         const monthKey = date.toLocaleString('default', { month: 'long' }).toUpperCase();
         const hour = date.getHours();
@@ -228,7 +234,31 @@ export const calculateStats = (conversations: InstaConversation[]): WrappedStats
     archetypeDesc = "When you talk, you don't use paragraphs. You use fifty separate messages in two minutes.";
   }
 
+  let actualDateRange = null;
+  if (earliest !== Infinity && latest !== 0 && latest > earliest) {
+    const date1 = new Date(earliest);
+    const date2 = new Date(latest);
+    let years = date2.getFullYear() - date1.getFullYear();
+    let months = date2.getMonth() - date1.getMonth();
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+    
+    let parts = [];
+    if (years > 0) parts.push(`${years} ${years === 1 ? 'year' : 'years'}`);
+    if (months > 0 || years === 0) parts.push(`${months} ${months === 1 ? 'month' : 'months'}`);
+    
+    actualDateRange = {
+      earliest,
+      latest,
+      formattedDuration: parts.join(', ') || 'Less than a month'
+    };
+  }
+
   return {
+    selectedExportRange: exportRange,
+    actualDateRange,
     capabilities: caps,
     totalMessages,
     messagesSent,

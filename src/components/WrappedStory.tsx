@@ -215,6 +215,13 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
         ))}
       </div>
 
+      {/* Close Button (Top Left) */}
+      <div className="absolute top-12 left-6 z-50 controls-layer">
+        <button onClick={onReset} className="p-2.5 rounded-full bg-black/40 backdrop-blur-md border border-white/10 hover:bg-white/10 transition" title="Exit to Home">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+
       {/* Controls (Top Right) */}
       <div className="absolute top-12 right-6 z-50 flex gap-3 controls-layer">
         <button onClick={onExplore} className="p-2.5 rounded-full bg-black/40 backdrop-blur-md border border-white/10 hover:bg-white/10 transition" title="Explore Data">

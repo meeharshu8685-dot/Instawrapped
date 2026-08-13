@@ -2,6 +2,8 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Lock } from 'lucide-react';
 import UploadZone from './UploadZone';
+import ExportRangeSelection from './ExportRangeSelection';
+import type { ExportRange } from '../types/instagram';
 
 interface Props {
   onDataLoaded: (stats: any) => void;
@@ -9,6 +11,13 @@ interface Props {
 }
 
 const LandingPage: React.FC<Props> = ({ onDataLoaded, onDemoLoaded }) => {
+  const [step, setStep] = React.useState<'selection' | 'upload'>('selection');
+  const [exportRange, setExportRange] = React.useState<ExportRange>('all');
+
+  const handleSelection = (range: ExportRange) => {
+    setExportRange(range);
+    setStep('upload');
+  };
   return (
     <div className="min-h-screen relative overflow-hidden">
       {/* Background gradients */}
@@ -49,28 +58,46 @@ const LandingPage: React.FC<Props> = ({ onDataLoaded, onDemoLoaded }) => {
               </p>
             </motion.div>
 
-            <motion.div 
-              className="space-y-4 pt-4"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-            >
-              <UploadZone onDataLoaded={onDataLoaded} />
-              
-              <div className="flex items-center justify-center gap-4 text-sm text-white/40 pt-4">
-                <span className="h-px flex-1 bg-white/10"></span>
-                <span>or</span>
-                <span className="h-px flex-1 bg-white/10"></span>
-              </div>
-
-              <button 
-                onClick={onDemoLoaded}
-                className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors text-white font-medium group"
+            {step === 'selection' ? (
+              <motion.div 
+                key="selection"
+                className="pt-4"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
               >
-                <Sparkles className="w-5 h-5 text-insta-orange group-hover:scale-110 transition-transform" />
-                Try Demo with Sample Data
-              </button>
-            </motion.div>
+                <ExportRangeSelection onContinue={handleSelection} />
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="upload"
+                className="space-y-4 pt-4"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+              >
+                <button 
+                  onClick={() => setStep('selection')}
+                  className="text-white/40 text-sm hover:text-white mb-2 underline underline-offset-4"
+                >
+                  ← Change export range
+                </button>
+                <UploadZone onDataLoaded={onDataLoaded} exportRange={exportRange} />
+                
+                <div className="flex items-center justify-center gap-4 text-sm text-white/40 pt-4">
+                  <span className="h-px flex-1 bg-white/10"></span>
+                  <span>or</span>
+                  <span className="h-px flex-1 bg-white/10"></span>
+                </div>
+
+                <button 
+                  onClick={onDemoLoaded}
+                  className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors text-white font-medium group"
+                >
+                  <Sparkles className="w-5 h-5 text-insta-orange group-hover:scale-110 transition-transform" />
+                  Try Demo with Sample Data
+                </button>
+              </motion.div>
+            )}
           </div>
 
           <motion.div 

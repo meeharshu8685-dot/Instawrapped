@@ -1,6 +1,8 @@
 import type { WrappedStats } from '../types/instagram';
 
 export const sampleStats: WrappedStats = {
+  selectedExportRange: 'all',
+  actualDateRange: { earliest: 1672531200000, latest: 1723531200000, formattedDuration: '1 year, 7 months' },
   totalMessages: 42105,
   messagesSent: 21000,
   messagesReceived: 21105,

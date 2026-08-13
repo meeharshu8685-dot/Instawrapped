@@ -40,6 +40,7 @@ function App() {
         <ExploreMode 
           stats={stats} 
           onBack={() => setView('story')} 
+          onReset={() => { setStats(null); setView('upload'); }}
         />
       )}
     </div>

@@ -6,9 +6,10 @@ import { motion } from 'framer-motion';
 interface Props {
   stats: WrappedStats;
   onBack: () => void;
+  onReset: () => void;
 }
 
-const ExploreMode: React.FC<Props> = ({ stats, onBack }) => {
+const ExploreMode: React.FC<Props> = ({ stats, onBack, onReset }) => {
   
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -29,12 +30,21 @@ const ExploreMode: React.FC<Props> = ({ stats, onBack }) => {
       
       <div className="max-w-6xl mx-auto relative z-10">
         <header className="flex items-center justify-between mb-12">
-          <button 
-            onClick={onBack}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition text-sm font-bold"
-          >
-            <ChevronLeft className="w-4 h-4" /> Back to Wrapped
-          </button>
+          <div className="flex gap-3">
+            <button 
+              onClick={onReset}
+              className="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 transition text-sm font-bold"
+              title="Exit to Home"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+            <button 
+              onClick={onBack}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition text-sm font-bold"
+            >
+              <ChevronLeft className="w-4 h-4" /> Back to Wrapped
+            </button>
+          </div>
           
           <h1 className="text-2xl font-black text-gradient">InstaWrapped Data</h1>
         </header>

@@ -1,18 +1,22 @@
 import React, { useState, useRef } from 'react';
-import { UploadCloud, Loader2, AlertCircle } from 'lucide-react';
+import { UploadCloud, Loader2, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { parseInstagramZip } from '../analytics/instagramParser';
 import { calculateStats } from '../analytics/statistics';
 
+import type { ExportRange, WrappedStats } from '../types/instagram';
+
 interface Props {
-  onDataLoaded: (stats: any) => void;
+  onDataLoaded: (stats: WrappedStats) => void;
+  exportRange: ExportRange;
 }
 
-const UploadZone: React.FC<Props> = ({ onDataLoaded }) => {
+const UploadZone: React.FC<Props> = ({ onDataLoaded, exportRange }) => {
   const [isDragging, setIsDragging] = useState(false);
-  const [status, setStatus] = useState<'idle' | 'processing' | 'error'>('idle');
+  const [status, setStatus] = useState<'idle' | 'processing' | 'ready' | 'error'>('idle');
   const [progressMsg, setProgressMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [analyzedStats, setAnalyzedStats] = useState<WrappedStats | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const processFile = async (file: File) => {
@@ -30,12 +34,13 @@ const UploadZone: React.FC<Props> = ({ onDataLoaded }) => {
       setProgressMsg('Counting interactions & ranking connections...');
       
       await new Promise(r => setTimeout(r, 800));
-      const stats = calculateStats(conversations);
+      const stats = calculateStats(conversations, exportRange);
       
       setProgressMsg('Rendering cinematic experience...');
       await new Promise(r => setTimeout(r, 1200));
       
-      onDataLoaded(stats);
+      setAnalyzedStats(stats);
+      setStatus('ready');
     } catch (err: any) {
       setStatus('error');
       setErrorMsg(err.message || 'Failed to process the ZIP file.');
@@ -113,6 +118,35 @@ const UploadZone: React.FC<Props> = ({ onDataLoaded }) => {
                   <div className="absolute inset-y-0 left-0 bg-insta-gradient w-1/2 rounded-full animate-[pulse_2s_ease-in-out_infinite] shadow-[0_0_10px_rgba(225,48,108,0.5)]" />
                 </div>
                 <p className="text-white/70 font-medium text-center">{progressMsg}</p>
+              </motion.div>
+            )}
+
+            {status === 'ready' && analyzedStats && (
+              <motion.div
+                key="ready"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex flex-col items-center w-full max-w-sm"
+              >
+                <div className="w-16 h-16 rounded-full bg-insta-purple/20 flex items-center justify-center mb-4 text-insta-pink">
+                  <CheckCircle2 className="w-8 h-8" />
+                </div>
+                <h3 className="text-2xl font-bold mb-2">Export analyzed</h3>
+                {analyzedStats.actualDateRange ? (
+                  <p className="text-white/70 font-medium mb-6">{analyzedStats.actualDateRange.formattedDuration} of Instagram data found.</p>
+                ) : (
+                  <p className="text-white/70 font-medium mb-6">Your Instagram export has been analyzed.</p>
+                )}
+                
+                <p className="text-white mb-8">Ready to see your Wrapped?</p>
+
+                <button 
+                  onClick={() => onDataLoaded(analyzedStats)}
+                  className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-white text-black font-bold text-lg hover:scale-[1.02] transition-transform group"
+                >
+                  Show my Wrapped
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </button>
               </motion.div>
             )}
 
