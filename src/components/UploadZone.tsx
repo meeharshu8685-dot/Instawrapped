@@ -41,7 +41,7 @@ const UploadZone: React.FC<Props> = ({ onDataLoaded, exportRange }) => {
     try {
       // Step 0: "Looking through your year..."
       setProcessingStepIndex(0);
-      const conversations = await parseInstagramZip(file, setProgressMsg);
+      const conversations = await parseInstagramZip(file, () => {});
       
       // Step 1: "Finding your conversations..."
       setProcessingStepIndex(1);

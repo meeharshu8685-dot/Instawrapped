@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { ArrowRight, Lock, Shield, Eye, Heart, BarChart3, Clock, Calendar } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import UploadZone from './UploadZone';
 import ExportRangeSelection from './ExportRangeSelection';
