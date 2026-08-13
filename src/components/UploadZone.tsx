@@ -29,13 +29,11 @@ const UploadZone: React.FC<Props> = ({ onDataLoaded }) => {
       const conversations = await parseInstagramZip(file, setProgressMsg);
       setProgressMsg('Counting interactions & ranking connections...');
       
-      // Add slight delay for visual cinematic effect
       await new Promise(r => setTimeout(r, 800));
-      
       const stats = calculateStats(conversations);
       
-      setProgressMsg('Building your Wrapped...');
-      await new Promise(r => setTimeout(r, 800));
+      setProgressMsg('Rendering cinematic experience...');
+      await new Promise(r => setTimeout(r, 1200));
       
       onDataLoaded(stats);
     } catch (err: any) {
@@ -61,8 +59,7 @@ const UploadZone: React.FC<Props> = ({ onDataLoaded }) => {
       onDragLeave={() => setIsDragging(false)}
       onDrop={handleDrop}
     >
-      {/* Glow effect behind dropzone */}
-      <div className={`absolute inset-0 rounded-3xl bg-gradient-to-r from-insta-purple via-insta-pink to-insta-orange opacity-0 blur-xl transition-opacity duration-500 ${isDragging || status === 'processing' ? 'opacity-30' : 'opacity-0 hover:opacity-10'}`} />
+      <div className={`absolute inset-0 rounded-3xl bg-gradient-to-r from-insta-purple via-insta-pink to-insta-orange blur-xl transition-opacity duration-500 ${isDragging || status === 'processing' ? 'opacity-30' : 'opacity-0 hover:opacity-10'}`} />
       
       <div className={`relative glass-card overflow-hidden border-2 transition-colors duration-300 ${
         isDragging ? 'border-insta-pink bg-white/10' : 
@@ -85,7 +82,7 @@ const UploadZone: React.FC<Props> = ({ onDataLoaded }) => {
                   <UploadCloud className="w-8 h-8" />
                 </div>
                 <h3 className="text-2xl font-bold mb-2">Drop your Instagram export here</h3>
-                <p className="text-white/50 mb-8">Supports official Instagram data .zip files</p>
+                <p className="text-white/50 mb-8">Supports official Instagram data .zip files. Everything is processed safely on your device.</p>
                 
                 <button 
                   onClick={() => fileInputRef.current?.click()}
@@ -111,11 +108,11 @@ const UploadZone: React.FC<Props> = ({ onDataLoaded }) => {
                 className="flex flex-col items-center w-full max-w-sm"
               >
                 <Loader2 className="w-12 h-12 text-insta-pink animate-spin mb-6" />
-                <h3 className="text-xl font-bold mb-2">Processing Data...</h3>
+                <h3 className="text-xl font-bold mb-2">Building your Wrapped...</h3>
                 <div className="w-full bg-white/5 rounded-full h-1.5 mb-4 overflow-hidden relative">
                   <div className="absolute inset-y-0 left-0 bg-insta-gradient w-1/2 rounded-full animate-[pulse_2s_ease-in-out_infinite] shadow-[0_0_10px_rgba(225,48,108,0.5)]" />
                 </div>
-                <p className="text-white/70 font-medium text-center animate-pulse">{progressMsg}</p>
+                <p className="text-white/70 font-medium text-center">{progressMsg}</p>
               </motion.div>
             )}
 

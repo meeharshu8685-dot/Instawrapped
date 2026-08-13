@@ -2,13 +2,14 @@ export interface InstaMessage {
   sender_name: string;
   timestamp_ms: number;
   content?: string;
-  type?: string; // 'Generic', 'Share', 'Call'
+  type?: string; 
   is_unsent?: boolean;
   photos?: any[];
   videos?: any[];
   audio_files?: any[];
   share?: any;
   reactions?: any[];
+  is_action?: boolean;
 }
 
 export interface InstaConversation {
@@ -28,22 +29,67 @@ export interface ConnectionStat {
   reactions: number;
   interactionScore: number;
   longestConversation: number;
+  activeDays: number;
+}
+
+export interface MediaStat {
+  type: 'reel' | 'photo' | 'video' | 'post' | 'shared_media' | 'unknown';
+  confidence: 'high' | 'medium' | 'low';
+}
+
+export interface Capabilities {
+  messages: boolean;
+  timestamps: boolean;
+  participants: boolean;
+  media: boolean;
+  reels: boolean;
+  reactions: boolean;
 }
 
 export interface WrappedStats {
+  capabilities: Capabilities;
   totalMessages: number;
   messagesSent: number;
   messagesReceived: number;
   uniqueContacts: number;
-  reelsShared: number;
   activeDaysCount: number;
-  mostActiveMonth: string; // e.g. "JULY"
-  peakHour: number; // 0-23
+  
+  reelsShared: number;
+  mediaShared: number;
+  
+  mostActiveMonth: { month: string; count: number };
+  peakHour: number; 
+  peakDayOfWeek: string;
+  
   longestChat: {
     name: string;
     count: number;
   };
+  fastestDensity: {
+    name: string;
+    messages: number;
+    minutes: number;
+  } | null;
+  longestStreak: {
+    name: string;
+    count: number;
+  } | null;
+  comeback: {
+    name: string;
+    gapDays: number;
+    returnMessages: number;
+  } | null;
+  midnightConnection: {
+    name: string;
+    count: number;
+  } | null;
+  consistentConnection: {
+    name: string;
+    activeDays: number;
+  } | null;
+
   topConnections: ConnectionStat[];
+  
   archetype: {
     title: string;
     description: string;

@@ -1,62 +1,45 @@
 import type { WrappedStats } from '../types/instagram';
 
 export const sampleStats: WrappedStats = {
-  totalMessages: 18492,
-  messagesSent: 9410,
-  messagesReceived: 9082,
+  totalMessages: 42105,
+  messagesSent: 21000,
+  messagesReceived: 21105,
   uniqueContacts: 142,
-  reelsShared: 1284,
-  activeDaysCount: 312,
-  mostActiveMonth: "JULY",
-  peakHour: 23, // 11 PM
-  longestChat: {
-    name: "Rahul",
-    count: 386,
-  },
+  activeDaysCount: 340,
+  reelsShared: 2800,
+  mediaShared: 4500,
+  
+  mostActiveMonth: { month: 'August', count: 6100 },
+  peakHour: 22,
+  peakDayOfWeek: 'Friday',
+  
+  longestChat: { name: "sarah_smith", count: 120 },
+  fastestDensity: { name: "alex_jones", messages: 50, minutes: 2 },
+  longestStreak: { name: "meme_group", count: 14 },
+  comeback: { name: "david_w", gapDays: 45, returnMessages: 100 },
+  midnightConnection: { name: "sarah_smith", count: 300 },
+  consistentConnection: { name: "emma_t", activeDays: 280 },
+
   topConnections: [
-    {
-      name: "Rahul",
-      messageCount: 4832,
-      mediaShared: 347,
-      reactions: 142,
-      interactionScore: 5668,
-      longestConversation: 386,
-    },
-    {
-      name: "Aditi",
-      messageCount: 2940,
-      mediaShared: 180,
-      reactions: 95,
-      interactionScore: 3395,
-      longestConversation: 120,
-    },
-    {
-      name: "Aryan",
-      messageCount: 1840,
-      mediaShared: 90,
-      reactions: 50,
-      interactionScore: 2070,
-      longestConversation: 85,
-    },
-    {
-      name: "Karan",
-      messageCount: 950,
-      mediaShared: 250, // lots of reels
-      reactions: 20,
-      interactionScore: 1470,
-      longestConversation: 40,
-    },
-    {
-      name: "Sneha",
-      messageCount: 820,
-      mediaShared: 30,
-      reactions: 88,
-      interactionScore: 968,
-      longestConversation: 60,
-    }
+    { name: "sarah_smith", messageCount: 15420, mediaShared: 840, reactions: 2100, interactionScore: 95, longestConversation: 120, activeDays: 300 },
+    { name: "alex_jones", messageCount: 8900, mediaShared: 420, reactions: 1100, interactionScore: 82, longestConversation: 85, activeDays: 250 },
+    { name: "meme_group", messageCount: 6500, mediaShared: 2100, reactions: 3400, interactionScore: 78, longestConversation: 45, activeDays: 200 },
+    { name: "david_w", messageCount: 4200, mediaShared: 150, reactions: 800, interactionScore: 65, longestConversation: 60, activeDays: 150 },
+    { name: "emma_t", messageCount: 3100, mediaShared: 320, reactions: 900, interactionScore: 60, longestConversation: 50, activeDays: 120 },
+    { name: "family_chat", messageCount: 2800, mediaShared: 600, reactions: 1500, interactionScore: 55, longestConversation: 30, activeDays: 180 },
   ],
+  
+  capabilities: {
+    messages: true,
+    timestamps: true,
+    participants: true,
+    media: true,
+    reels: true,
+    reactions: true
+  },
+  
   archetype: {
-    title: "The Night Owl",
-    description: "Apparently, sleep was optional. Most of your deep conversations and reel spirals happened after hours."
+    title: 'The Night Owl',
+    description: 'You come alive when the world goes to sleep. Your best conversations happen after midnight.'
   }
 };
