@@ -3,13 +3,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import type { WrappedStats } from '../types/instagram';
 import ShareCard from './ShareCard';
-import { LayoutGrid, Eye, EyeOff, Volume2, VolumeX } from 'lucide-react';
+import ShareMenu from './ShareMenu';
+import { LayoutGrid, Eye, EyeOff, Volume2, VolumeX, Share } from 'lucide-react';
 
 interface SlideProps {
   stats: WrappedStats;
   showNames?: boolean;
   onReset?: () => void;
   onExplore?: () => void;
+  onShareClick?: () => void;
 }
 
 interface Slide {
@@ -24,7 +26,6 @@ interface Props {
 }
 
 const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
-  // Build slide array based on capabilities
   const buildSlides = (): Slide[] => {
     const slides: Slide[] = [
       { id: 'intro', component: SlideIntro },
@@ -41,7 +42,7 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
     if (stats.consistentConnection) slides.push({ id: 'consistent', component: SlideConsistent });
     if (stats.capabilities.media) slides.push({ id: 'media', component: SlideMedia });
     
-    slides.push({ id: 'top3', component: SlideTop3 });
+    slides.push({ id: 'top5', component: SlideTop5 });
     slides.push({ id: 'top1', component: SlideTop1 });
     slides.push({ id: 'archetype', component: SlideArchetype });
     slides.push({ id: 'share', component: SlideShare });
@@ -56,6 +57,7 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [showNames, setShowNames] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
 
   // Time tracking for progress bar
   const SLIDE_DURATION = 6000; // 6 seconds
@@ -65,7 +67,7 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
 
   useEffect(() => {
     if (currentSlide === TOTAL_SLIDES - 1) return; // Stop on last slide
-    if (isPaused) {
+    if (isPaused || showShareMenu) {
       if (timerRef.current) cancelAnimationFrame(timerRef.current);
       lastUpdateRef.current = Date.now();
       return;
@@ -92,7 +94,7 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
     return () => {
       if (timerRef.current) cancelAnimationFrame(timerRef.current);
     };
-  }, [currentSlide, isPaused]);
+  }, [currentSlide, isPaused, showShareMenu]);
 
   // Keyboard Nav
   useEffect(() => {
@@ -169,39 +171,56 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
 
   const CurrentSlideComponent = slides[currentSlide].component;
 
+  // Subtle Parallax Effect based on pointer movement (if desktop)
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const { clientX, clientY } = e;
+    const x = (clientX / window.innerWidth - 0.5) * 20; // max 20px shift
+    const y = (clientY / window.innerHeight - 0.5) * 20;
+    setMousePos({ x, y });
+  };
+
   return (
     <div 
-      className="fixed inset-0 bg-background text-white select-none overflow-hidden touch-none"
+      className="fixed inset-0 bg-[#020202] text-white select-none overflow-hidden touch-none"
       onPointerDown={(e) => {
-        // Only pause if clicking main area, not controls
         if ((e.target as HTMLElement).closest('.controls-layer')) return;
         setIsPaused(true);
       }}
-      onPointerUp={() => {
-        setIsPaused(false);
-        // We use onClick for tap handling to avoid double firing with pointer events on mobile
-      }}
+      onPointerUp={() => setIsPaused(false)}
       onPointerCancel={() => setIsPaused(false)}
-      onContextMenu={(e) => e.preventDefault()} // Disable right click context
+      onContextMenu={(e) => e.preventDefault()}
+      onMouseMove={handleMouseMove}
     >
+      <AnimatePresence>
+        {showShareMenu && (
+          <ShareMenu stats={stats} onClose={() => setShowShareMenu(false)} />
+        )}
+      </AnimatePresence>
       
-      {/* Background Ambience */}
-      <div className="absolute inset-0 bg-grain opacity-30 pointer-events-none z-0" />
+      {/* Background Ambience (Parallax) */}
       <motion.div 
-        animate={{ 
-          background: [
-            'radial-gradient(circle at 0% 0%, #833ab430 0%, transparent 50%)',
-            'radial-gradient(circle at 100% 100%, #fd1d1d30 0%, transparent 50%)',
-            'radial-gradient(circle at 0% 100%, #fcb04530 0%, transparent 50%)',
-            'radial-gradient(circle at 100% 0%, #e1306c30 0%, transparent 50%)'
-          ]
-        }}
-        transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
-        className="absolute inset-0 pointer-events-none transition-colors duration-1000 z-0"
-      />
+        className="absolute inset-0 z-0"
+        animate={{ x: mousePos.x, y: mousePos.y }}
+        transition={{ type: 'spring', damping: 40, stiffness: 100 }}
+      >
+        <div className="absolute inset-0 bg-grain opacity-20 mix-blend-overlay" />
+        <motion.div 
+          animate={{ 
+            background: [
+              'radial-gradient(circle at 0% 0%, rgba(131,58,180,0.15) 0%, transparent 60%)',
+              'radial-gradient(circle at 100% 100%, rgba(253,29,29,0.15) 0%, transparent 60%)',
+              'radial-gradient(circle at 0% 100%, rgba(252,176,69,0.15) 0%, transparent 60%)',
+              'radial-gradient(circle at 100% 0%, rgba(225,48,108,0.15) 0%, transparent 60%)'
+            ]
+          }}
+          transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
+          className="absolute inset-0"
+        />
+      </motion.div>
 
       {/* Progress Bars (Top) */}
-      <div className="absolute top-0 left-0 right-0 p-4 pt-6 z-50 flex gap-1.5 opacity-80 pointer-events-none controls-layer">
+      <div className="absolute top-0 left-0 right-0 p-4 pt-12 md:pt-8 z-50 flex gap-1.5 opacity-80 pointer-events-none controls-layer max-w-2xl mx-auto">
         {slides.map((_, i) => (
           <div key={i} className={`progress-segment ${i === currentSlide && isPaused ? 'opacity-50' : ''}`}>
             {i < currentSlide && <div className="progress-segment-fill w-full" />}
@@ -215,114 +234,178 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
         ))}
       </div>
 
-      {/* Close Button (Top Left) */}
-      <div className="absolute top-12 left-6 z-50 controls-layer">
-        <button onClick={onReset} className="p-2.5 rounded-full bg-black/40 backdrop-blur-md border border-white/10 hover:bg-white/10 transition" title="Exit to Home">
+      {/* Controls (Top Left) */}
+      <div className="absolute top-16 md:top-12 left-6 z-50 controls-layer">
+        <button onClick={onReset} className="p-3 rounded-full bg-white/5 backdrop-blur-md hover:bg-white/10 transition-colors" title="Exit to Home">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
         </button>
       </div>
 
       {/* Controls (Top Right) */}
-      <div className="absolute top-12 right-6 z-50 flex gap-3 controls-layer">
-        <button onClick={onExplore} className="p-2.5 rounded-full bg-black/40 backdrop-blur-md border border-white/10 hover:bg-white/10 transition" title="Explore Data">
+      <div className="absolute top-16 md:top-12 right-6 z-50 flex gap-3 controls-layer">
+        <button onClick={() => setShowShareMenu(true)} className="p-3 rounded-full bg-white/5 backdrop-blur-md hover:bg-white/10 transition-colors text-white/80 hover:text-white" title="Share Wrapped">
+          <Share className="w-5 h-5" />
+        </button>
+        <button onClick={onExplore} className="p-3 rounded-full bg-white/5 backdrop-blur-md hover:bg-white/10 transition-colors text-white/80 hover:text-white" title="Explore Data">
           <LayoutGrid className="w-5 h-5" />
         </button>
-        <button onClick={() => setShowNames(!showNames)} className="p-2.5 rounded-full bg-black/40 backdrop-blur-md border border-white/10 hover:bg-white/10 transition">
-          {showNames ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5 text-white/50" />}
+        <button onClick={() => setShowNames(!showNames)} className="p-3 rounded-full bg-white/5 backdrop-blur-md hover:bg-white/10 transition-colors text-white/80 hover:text-white">
+          {showNames ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5 text-white/40" />}
         </button>
-        <button onClick={() => setSoundEnabled(!soundEnabled)} className="p-2.5 rounded-full bg-black/40 backdrop-blur-md border border-white/10 hover:bg-white/10 transition">
-          {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5 text-white/50" />}
+        <button onClick={() => setSoundEnabled(!soundEnabled)} className="p-3 rounded-full bg-white/5 backdrop-blur-md hover:bg-white/10 transition-colors text-white/80 hover:text-white hidden md:block">
+          {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5 text-white/40" />}
         </button>
       </div>
 
       {/* Slide Content Area */}
       <div 
-        className="absolute inset-0 flex items-center justify-center z-10 pt-10"
+        className="absolute inset-0 flex items-center justify-center z-10"
         onClick={handleTap}
       >
         <AnimatePresence mode="wait">
           <motion.div
             key={currentSlide}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.05 }}
-            transition={{ duration: 0.4 }}
-            className={`w-full h-full flex flex-col items-center justify-center p-6 ${isPaused ? 'scale-[0.98]' : 'scale-100'} transition-transform duration-300`}
+            initial={{ opacity: 0, scale: 0.95, filter: 'blur(10px)' }}
+            animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, scale: 1.05, filter: 'blur(10px)' }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            className={`w-full h-full flex flex-col items-center justify-center p-6 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isPaused ? 'scale-[0.96] opacity-90' : 'scale-100'}`}
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.2}
+            dragElastic={0.1}
             onDragEnd={(_, { offset }) => {
               const swipe = offset.x;
               if (swipe < -50) nextSlide();
               else if (swipe > 50) prevSlide();
             }}
           >
-            <CurrentSlideComponent stats={stats} showNames={showNames} onReset={onReset} onExplore={onExplore} />
+            {/* Slide Midground Parallax */}
+            <motion.div 
+              className="absolute inset-0 flex items-center justify-center pointer-events-none"
+              animate={{ x: mousePos.x * 0.5, y: mousePos.y * 0.5 }}
+              transition={{ type: 'spring', damping: 40, stiffness: 100 }}
+            >
+              <CurrentSlideComponent stats={stats} showNames={showNames} onReset={onReset} onExplore={onExplore} onShareClick={() => setShowShareMenu(true)} />
+            </motion.div>
           </motion.div>
         </AnimatePresence>
       </div>
-
-      {isPaused && (
-        <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full text-xs font-bold tracking-widest z-50 pointer-events-none animate-pulse">
-          PAUSED
-        </div>
-      )}
     </div>
   );
 };
 
 // --- SLIDE COMPONENTS --- //
+// Every slide follows the "Less UI, More Experience" principle. High contrast typography. Staged reveals.
 
 const SlideIntro = () => (
   <div className="text-center">
-    <h1 className="text-5xl md:text-8xl font-black tracking-tighter mb-4 text-gradient">Your Instagram, <br/> wrapped.</h1>
-    <p className="text-2xl font-bold text-white/50 mb-12">2026</p>
+    <motion.h1 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+      className="text-6xl md:text-[8rem] font-bold tracking-tighter mb-4 leading-none"
+    >
+      Your Instagram, <br/> wrapped.
+    </motion.h1>
+    <motion.p 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 1, duration: 1 }}
+      className="text-3xl font-bold text-white/30 tracking-widest"
+    >
+      2026
+    </motion.p>
   </div>
 );
 
 const SlideTotal = ({ stats }: { stats: WrappedStats }) => (
-  <div className="text-center max-w-lg">
-    <p className="text-xl md:text-2xl text-white/60 font-bold mb-8 uppercase tracking-widest">First things first...</p>
-    <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }} className="text-[5rem] md:text-[8rem] font-black leading-none text-insta-pink mb-4">
+  <div className="text-center">
+    <motion.p 
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }} 
+      className="text-xl md:text-3xl text-white/40 font-medium mb-8"
+    >
+      First things first...
+    </motion.p>
+    <motion.div 
+      initial={{ y: 20, opacity: 0, filter: 'blur(10px)' }} 
+      animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }} 
+      transition={{ delay: 1, duration: 1.5, ease: [0.16, 1, 0.3, 1] }} 
+      className="text-[6rem] md:text-[12rem] font-bold leading-none tracking-tighter drop-shadow-2xl mb-4"
+    >
       {stats.totalMessages.toLocaleString()}
     </motion.div>
-    <p className="text-2xl md:text-4xl font-bold">messages exchanged</p>
+    <motion.p 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 1.5, duration: 1 }}
+      className="text-3xl md:text-5xl font-medium text-white/60 tracking-tight"
+    >
+      messages exchanged
+    </motion.p>
   </div>
 );
 
-const SlideRatio = ({ stats }: { stats: WrappedStats }) => (
-  <div className="w-full max-w-2xl px-6">
-    <h2 className="text-3xl md:text-5xl font-black mb-16 text-center text-gradient">You had a lot to say.</h2>
-    <div className="space-y-12">
-      <div>
-        <div className="flex justify-between text-2xl font-bold mb-4">
-          <span className="text-white/70">Sent</span>
-          <span>{stats.messagesSent.toLocaleString()}</span>
+const SlideRatio = ({ stats }: { stats: WrappedStats }) => {
+  const sentPercent = (stats.messagesSent / stats.totalMessages) * 100;
+  const receivedPercent = (stats.messagesReceived / stats.totalMessages) * 100;
+  
+  return (
+    <div className="w-full max-w-4xl px-8 flex flex-col justify-center h-full">
+      <h2 className="text-4xl md:text-6xl font-bold mb-32 tracking-tighter">You had a lot to say.</h2>
+      
+      <div className="space-y-16">
+        <div>
+          <div className="flex justify-between text-2xl font-bold mb-6">
+            <span className="text-white/40">Sent</span>
+            <span>{stats.messagesSent.toLocaleString()}</span>
+          </div>
+          <div className="h-1 bg-white/5 w-full relative">
+            <motion.div 
+              initial={{ width: 0 }} 
+              animate={{ width: `${sentPercent}%` }} 
+              transition={{ duration: 2, delay: 0.5, ease: [0.16, 1, 0.3, 1] }} 
+              className="absolute top-0 left-0 h-full bg-white shadow-[0_0_20px_rgba(255,255,255,0.5)]" 
+            />
+          </div>
         </div>
-        <div className="h-6 bg-white/10 rounded-full overflow-hidden shadow-inner">
-          <motion.div initial={{ width: 0 }} animate={{ width: `${(stats.messagesSent / stats.totalMessages) * 100}%` }} transition={{ duration: 1.5, delay: 0.5, ease: 'easeOut' }} className="h-full bg-insta-pink" />
-        </div>
-      </div>
-      <div>
-        <div className="flex justify-between text-2xl font-bold mb-4">
-          <span className="text-white/70">Received</span>
-          <span>{stats.messagesReceived.toLocaleString()}</span>
-        </div>
-        <div className="h-6 bg-white/10 rounded-full overflow-hidden shadow-inner">
-          <motion.div initial={{ width: 0 }} animate={{ width: `${(stats.messagesReceived / stats.totalMessages) * 100}%` }} transition={{ duration: 1.5, delay: 0.8, ease: 'easeOut' }} className="h-full bg-insta-orange" />
+        
+        <div>
+          <div className="flex justify-between text-2xl font-bold mb-6">
+            <span className="text-white/40">Received</span>
+            <span>{stats.messagesReceived.toLocaleString()}</span>
+          </div>
+          <div className="h-1 bg-white/5 w-full relative">
+            <motion.div 
+              initial={{ width: 0 }} 
+              animate={{ width: `${receivedPercent}%` }} 
+              transition={{ duration: 2, delay: 0.8, ease: [0.16, 1, 0.3, 1] }} 
+              className="absolute top-0 left-0 h-full bg-white/40" 
+            />
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const SlideMonth = ({ stats }: { stats: WrappedStats }) => (
   <div className="text-center">
-    <p className="text-xl md:text-2xl text-white/60 font-bold mb-8 uppercase tracking-widest">Your most active month</p>
-    <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.3, type: 'spring' }} className="text-6xl md:text-9xl font-black text-gradient">
+    <p className="text-2xl text-white/40 font-medium mb-12">Your most active month</p>
+    <motion.div 
+      initial={{ scale: 0.9, opacity: 0, filter: 'blur(20px)' }} 
+      animate={{ scale: 1, opacity: 1, filter: 'blur(0px)' }} 
+      transition={{ delay: 0.5, duration: 1.5, ease: [0.16, 1, 0.3, 1] }} 
+      className="text-[7rem] md:text-[14rem] font-bold tracking-tighter leading-none"
+    >
       {stats.mostActiveMonth.month}
     </motion.div>
-    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }} className="mt-8 text-2xl font-bold text-white/70">
+    <motion.p 
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }} 
+      transition={{ delay: 1.5, duration: 1 }} 
+      className="mt-12 text-3xl font-medium text-white/50"
+    >
       {stats.mostActiveMonth.count.toLocaleString()} messages
     </motion.p>
   </div>
@@ -335,133 +418,260 @@ const formatHour = (h: number) => {
 };
 
 const SlidePeak = ({ stats }: { stats: WrappedStats }) => (
-  <div className="text-center">
-    <p className="text-xl md:text-2xl text-white/60 font-bold mb-8 uppercase tracking-widest">When you were online</p>
-    <div className="glass-card p-12 border-insta-purple/30">
-      <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }} className="text-5xl md:text-7xl font-black mb-4">
-        {stats.peakDayOfWeek}s
-      </motion.div>
-      <div className="text-2xl text-white/50 font-bold mb-2">at</div>
-      <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.6 }} className="text-6xl md:text-8xl font-black text-insta-pink">
-        {formatHour(stats.peakHour)}
-      </motion.div>
+  <div className="text-center flex flex-col items-center">
+    <p className="text-2xl text-white/40 font-medium mb-16">When you were online</p>
+    
+    <div className="relative w-80 h-80 md:w-96 md:h-96 flex items-center justify-center">
+      {/* Abstract Clock/Time visualization */}
+      <svg className="absolute inset-0 w-full h-full opacity-20" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="1 4" />
+      </svg>
+      
+      <div className="z-10 flex flex-col items-center">
+        <motion.div 
+          initial={{ y: 20, opacity: 0 }} 
+          animate={{ y: 0, opacity: 1 }} 
+          transition={{ delay: 0.5, duration: 1 }} 
+          className="text-4xl md:text-5xl font-bold text-white/60 mb-2"
+        >
+          {stats.peakDayOfWeek}s
+        </motion.div>
+        
+        <motion.div 
+          initial={{ scale: 0.8, opacity: 0 }} 
+          animate={{ scale: 1, opacity: 1 }} 
+          transition={{ delay: 1, duration: 1.5, ease: [0.16, 1, 0.3, 1] }} 
+          className="text-7xl md:text-9xl font-bold tracking-tighter"
+        >
+          {formatHour(stats.peakHour)}
+        </motion.div>
+      </div>
     </div>
   </div>
 );
 
 const SlideDensity = ({ stats, showNames }: any) => (
-  <div className="text-center max-w-lg">
-    <p className="text-xl text-white/60 font-bold mb-8 uppercase tracking-widest">The Rapid-Fire Session</p>
-    <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={{ type: 'spring' }} className="glass-card p-10 border-red-500/30">
-      <h2 className="text-6xl font-black mb-4">{stats.fastestDensity.messages} messages</h2>
-      <p className="text-2xl font-bold text-white/70 mb-8">in under {stats.fastestDensity.minutes} minutes</p>
-      <p className="text-xl font-medium">with <span className="text-insta-pink font-black">{showNames ? stats.fastestDensity.name : "Someone"}</span></p>
-    </motion.div>
+  <div className="text-center max-w-4xl px-8">
+    <p className="text-2xl text-white/40 font-medium mb-16">The Rapid-Fire Session</p>
+    <motion.h2 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.5 }}
+      className="text-7xl md:text-9xl font-bold tracking-tighter mb-8 leading-none"
+    >
+      {stats.fastestDensity.messages} msgs
+    </motion.h2>
+    <motion.p 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 1.2 }}
+      className="text-4xl md:text-5xl font-medium text-white/60 mb-12 tracking-tight"
+    >
+      in under {stats.fastestDensity.minutes} minutes
+    </motion.p>
+    <motion.p 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 2 }}
+      className="text-3xl font-medium text-white/30"
+    >
+      with <span className="text-white">{showNames ? stats.fastestDensity.name : "Someone"}</span>
+    </motion.p>
   </div>
 );
 
 const SlideStreak = ({ stats, showNames }: any) => (
-  <div className="text-center">
-    <p className="text-xl text-white/60 font-bold mb-12 uppercase tracking-widest">The Monologue</p>
-    <h2 className="text-5xl md:text-7xl font-black mb-6">You sent <span className="text-gradient">{stats.longestStreak.count} messages</span> in a row.</h2>
-    <p className="text-2xl font-bold text-white/70">To {showNames ? stats.longestStreak.name : "Someone"}.</p>
-    <p className="mt-8 text-xl text-white/50 italic">They eventually replied. We hope.</p>
+  <div className="text-center max-w-4xl px-8">
+    <p className="text-2xl text-white/40 font-medium mb-16">The Monologue</p>
+    <motion.h2 
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 1 }}
+      className="text-5xl md:text-7xl font-bold tracking-tighter mb-8 leading-tight"
+    >
+      You sent <br/>
+      <span className="text-[6rem] md:text-[9rem] block mt-4">{stats.longestStreak.count}</span> <br/>
+      messages in a row.
+    </motion.h2>
+    <motion.p 
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.5 }}
+      className="text-2xl text-white/40 font-medium mt-12"
+    >
+      To {showNames ? stats.longestStreak.name : "Someone"}. They eventually replied.
+    </motion.p>
   </div>
 );
 
 const SlideComeback = ({ stats, showNames }: any) => (
-  <div className="text-center max-w-lg">
-    <p className="text-xl text-white/60 font-bold mb-12 uppercase tracking-widest">The Comeback</p>
-    <h2 className="text-4xl md:text-6xl font-black mb-6">After <span className="text-insta-orange">{stats.comeback.gapDays} days</span> of silence...</h2>
-    <p className="text-2xl font-bold text-white/70">You and {showNames ? stats.comeback.name : "Someone"} reconnected.</p>
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }} className="mt-8 glass-card p-6 border-white/10">
-      <p className="font-bold">{stats.comeback.returnMessages} messages since.</p>
-    </motion.div>
+  <div className="text-center max-w-4xl px-8">
+    <p className="text-2xl text-white/40 font-medium mb-16">The Comeback</p>
+    <motion.h2 
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 1 }}
+      className="text-4xl md:text-6xl font-bold tracking-tighter mb-12 leading-tight text-white/60"
+    >
+      After <span className="text-white">{stats.comeback.gapDays} days</span> of silence...
+    </motion.h2>
+    <motion.p 
+      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.5 }}
+      className="text-5xl md:text-7xl font-bold tracking-tighter"
+    >
+      You and {showNames ? stats.comeback.name : "Someone"} <br/> reconnected.
+    </motion.p>
   </div>
 );
 
 const SlideMidnight = ({ stats, showNames }: any) => (
   <div className="text-center">
-    <p className="text-xl text-white/60 font-bold mb-8 uppercase tracking-widest">After Hours</p>
-    <h2 className="text-4xl md:text-6xl font-black mb-12">Your favorite 3AM distraction:</h2>
-    <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5 }} className="text-6xl md:text-8xl font-black text-gradient">
+    <p className="text-2xl text-white/40 font-medium mb-16">After Hours</p>
+    <motion.h2 
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
+      className="text-4xl md:text-5xl font-medium tracking-tight mb-8 text-white/60"
+    >
+      Your favorite late-night distraction:
+    </motion.h2>
+    <motion.div 
+      initial={{ y: 20, opacity: 0, filter: 'blur(10px)' }} 
+      animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }} 
+      transition={{ delay: 1.5, duration: 1.5, ease: [0.16, 1, 0.3, 1] }} 
+      className="text-[5rem] md:text-[8rem] font-bold tracking-tighter leading-none"
+    >
       {showNames ? stats.midnightConnection.name : "Someone"}
     </motion.div>
-    <p className="mt-8 text-2xl font-bold text-white/50">{stats.midnightConnection.count} midnight messages</p>
   </div>
 );
 
 const SlideConsistent = ({ stats, showNames }: any) => (
-  <div className="text-center max-w-lg">
-    <p className="text-xl text-white/60 font-bold mb-12 uppercase tracking-widest">The Daily Habit</p>
-    <div className="glass-card p-10 border-insta-pink/30">
-      <p className="text-2xl font-bold mb-6">You talked to</p>
-      <h2 className="text-5xl font-black text-insta-pink mb-6">{showNames ? stats.consistentConnection.name : "Someone"}</h2>
-      <p className="text-3xl font-black">{stats.consistentConnection.activeDays} <span className="text-xl text-white/70">different days this year.</span></p>
-    </div>
+  <div className="text-center max-w-4xl px-8">
+    <p className="text-2xl text-white/40 font-medium mb-16">The Daily Habit</p>
+    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="text-3xl font-medium text-white/60 mb-6">
+      You talked to
+    </motion.p>
+    <motion.h2 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 }} className="text-6xl md:text-8xl font-bold tracking-tighter mb-16">
+      {showNames ? stats.consistentConnection.name : "Someone"}
+    </motion.h2>
+    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2 }} className="text-4xl md:text-5xl font-medium text-white/40 tracking-tight">
+      <span className="text-white">{stats.consistentConnection.activeDays}</span> different days this year.
+    </motion.p>
   </div>
 );
 
 const SlideMedia = ({ stats }: any) => (
   <div className="text-center">
-    <p className="text-xl text-white/60 font-bold mb-8 uppercase tracking-widest">Media Distribution</p>
-    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', delay: 0.3 }} className="text-[6rem] md:text-[9rem] font-black text-insta-orange mb-4 leading-none">
+    <p className="text-2xl text-white/40 font-medium mb-12">Media Distribution</p>
+    <motion.div 
+      initial={{ scale: 0.9, opacity: 0 }} 
+      animate={{ scale: 1, opacity: 1 }} 
+      transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1], delay: 0.5 }} 
+      className="text-[7rem] md:text-[12rem] font-bold tracking-tighter leading-none mb-8"
+    >
       {stats.mediaShared.toLocaleString()}
     </motion.div>
-    <p className="text-3xl font-bold text-white/70">reels, photos & posts shared</p>
+    <motion.p 
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.5 }}
+      className="text-3xl md:text-5xl font-medium text-white/50 tracking-tight"
+    >
+      photos & videos shared
+    </motion.p>
   </div>
 );
 
-const SlideTop3 = ({ stats, showNames }: any) => (
-  <div className="w-full max-w-md px-6">
-    <h2 className="text-3xl md:text-5xl font-black mb-12 text-center text-gradient">Your Inner Circle.</h2>
-    <div className="space-y-4">
-      {stats.topConnections.slice(1, 4).map((conn: any, i: number) => (
-        <motion.div key={i} initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.2 + (i * 0.2) }} className="glass-card p-6 flex items-center gap-6">
-          <div className="text-3xl font-black text-white/30">#{i+2}</div>
-          <div>
-            <div className="text-2xl font-bold">{showNames ? conn.name : `Connection ${i+2}`}</div>
-            <div className="text-insta-pink font-medium">{conn.messageCount.toLocaleString()} interactions</div>
-          </div>
-        </motion.div>
-      ))}
+// Vertical Cascade for Top 5
+const SlideTop5 = ({ stats, showNames }: any) => (
+  <div className="w-full max-w-3xl px-8 flex flex-col h-full justify-center">
+    <h2 className="text-4xl md:text-6xl font-bold mb-16 tracking-tighter">Your Inner Circle.</h2>
+    <div className="space-y-8">
+      {stats.topConnections.slice(1, 5).reverse().map((conn: any, i: number) => {
+        const rank = 5 - i;
+        return (
+          <motion.div 
+            key={i} 
+            initial={{ y: 20, opacity: 0 }} 
+            animate={{ y: 0, opacity: 1 }} 
+            transition={{ delay: 0.5 + (i * 0.4), duration: 0.8, ease: [0.16, 1, 0.3, 1] }} 
+            className="flex items-baseline gap-6 border-b border-white/5 pb-6"
+          >
+            <div className="text-2xl font-bold text-white/20">0{rank}</div>
+            <div className="text-3xl md:text-5xl font-bold tracking-tight truncate flex-1">
+              {showNames ? conn.name : `Connection ${rank}`}
+            </div>
+            <div className="text-xl md:text-2xl font-medium text-white/40">
+              {conn.messageCount.toLocaleString()}
+            </div>
+          </motion.div>
+        );
+      })}
     </div>
   </div>
 );
 
 const SlideTop1 = ({ stats, showNames }: any) => (
-  <div className="text-center">
-    <p className="text-xl md:text-2xl text-white/60 font-bold mb-12 uppercase tracking-widest">But your #1 was...</p>
-    <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', delay: 1 }} className="glass-card p-12 md:p-20 border-white/20 relative">
-      <div className="absolute -top-8 -right-8 w-16 h-16 bg-insta-orange rounded-full flex items-center justify-center font-black text-3xl shadow-xl rotate-12">#1</div>
-      <h2 className="text-6xl md:text-9xl font-black mb-6 text-gradient">{showNames ? stats.topConnections[0]?.name : "Someone"}</h2>
-      <p className="text-2xl text-white/70 font-medium">{stats.topConnections[0]?.messageCount.toLocaleString()} messages</p>
+  <div className="text-center w-full px-4">
+    <motion.p 
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
+      className="text-2xl text-white/40 font-medium mb-16"
+    >
+      But your #1 was...
+    </motion.p>
+    
+    <motion.div 
+      initial={{ scale: 0.9, opacity: 0, filter: 'blur(20px)' }} 
+      animate={{ scale: 1, opacity: 1, filter: 'blur(0px)' }} 
+      transition={{ delay: 2, duration: 1.5, ease: [0.16, 1, 0.3, 1] }} 
+      className="relative"
+    >
+      <h2 className="text-[5rem] md:text-[10rem] font-bold tracking-tighter mb-8 leading-none drop-shadow-2xl max-w-full break-words">
+        {showNames ? stats.topConnections[0]?.name : "Someone"}
+      </h2>
     </motion.div>
+
+    <motion.p 
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 3.5 }}
+      className="text-3xl md:text-5xl text-white/60 font-medium tracking-tight"
+    >
+      {stats.topConnections[0]?.messageCount.toLocaleString()} messages
+    </motion.p>
   </div>
 );
 
 const SlideArchetype = ({ stats }: any) => (
-  <div className="text-center max-w-2xl px-6">
-    <p className="text-xl text-white/60 font-bold mb-12 uppercase tracking-widest">Your 2026 Archetype</p>
-    <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5 }}>
-      <h2 className="text-5xl md:text-7xl font-black text-gradient mb-8 leading-none">{stats.archetype.title}</h2>
-      <p className="text-xl md:text-3xl text-white/80 leading-relaxed font-bold">{stats.archetype.description}</p>
+  <div className="text-center max-w-4xl px-8">
+    <p className="text-2xl text-white/40 font-medium mb-16">Your 2026 Archetype</p>
+    <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5, duration: 1, ease: [0.16, 1, 0.3, 1] }}>
+      <h2 className="text-[4rem] md:text-[7rem] font-bold tracking-tighter leading-none mb-12 drop-shadow-2xl">
+        {stats.archetype.title}
+      </h2>
+      <p className="text-2xl md:text-4xl text-white/50 leading-snug font-medium">
+        {stats.archetype.description}
+      </p>
     </motion.div>
   </div>
 );
 
-const SlideShare = ({ stats, showNames, onReset, onExplore }: any) => (
-  <div className="w-full h-full flex flex-col items-center justify-center px-4 controls-layer">
-    <ShareCard stats={stats} showNames={showNames} />
+const SlideShare = ({ stats, showNames, onReset, onExplore, onShareClick }: any) => (
+  <div className="w-full h-full flex flex-col items-center justify-center px-4 py-12 overflow-y-auto hide-scrollbar controls-layer">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      className="text-center mb-12 shrink-0 mt-8"
+    >
+      <h2 className="text-4xl md:text-6xl font-bold tracking-tighter mb-4">Your Wrapped is ready.</h2>
+    </motion.div>
+
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      className="shrink-0 mb-12"
+    >
+      <ShareCard stats={stats} showNames={showNames} />
+    </motion.div>
     
-    <div className="mt-8 flex flex-col md:flex-row gap-4">
-      <button onClick={onExplore} className="px-8 py-4 bg-white text-black font-bold rounded-full hover:scale-105 transition-transform flex items-center gap-2">
-        <LayoutGrid className="w-5 h-5" /> Explore Data Dashboard
+    <motion.div 
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
+      className="flex flex-col md:flex-row gap-4 shrink-0 mb-8 w-full max-w-2xl justify-center"
+    >
+      <button onClick={onShareClick} className="px-8 py-5 bg-white text-black font-bold text-lg rounded-full active:scale-95 transition-transform flex items-center justify-center gap-3 spatial-shadow">
+        <Share className="w-6 h-6" /> Share Link
       </button>
-      <button onClick={onReset} className="px-8 py-4 bg-white/10 text-white font-bold rounded-full hover:bg-white/20 transition-colors">
-        Start Over
+      <button onClick={onExplore} className="px-8 py-5 bg-white/10 text-white font-bold text-lg rounded-full active:scale-95 transition-transform hover:bg-white/20 flex items-center justify-center gap-3">
+        <LayoutGrid className="w-6 h-6" /> Explore Dashboard
       </button>
-    </div>
+    </motion.div>
   </div>
 );
 

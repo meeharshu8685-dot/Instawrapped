@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { UploadCloud, Loader2, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { UploadCloud, AlertCircle, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { parseInstagramZip } from '../analytics/instagramParser';
 import { calculateStats } from '../analytics/statistics';
@@ -11,12 +11,21 @@ interface Props {
   exportRange: ExportRange;
 }
 
+const PROCESSING_STEPS = [
+  "Looking through your year...",
+  "Finding your conversations...",
+  "Finding your people...",
+  "Finding your patterns...",
+  "Your Wrapped is ready."
+];
+
 const UploadZone: React.FC<Props> = ({ onDataLoaded, exportRange }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [status, setStatus] = useState<'idle' | 'processing' | 'ready' | 'error'>('idle');
   const [progressMsg, setProgressMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [analyzedStats, setAnalyzedStats] = useState<WrappedStats | null>(null);
+  const [processingStepIndex, setProcessingStepIndex] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const processFile = async (file: File) => {
@@ -27,19 +36,32 @@ const UploadZone: React.FC<Props> = ({ onDataLoaded, exportRange }) => {
     }
 
     setStatus('processing');
+    setProcessingStepIndex(0);
     setErrorMsg('');
     
     try {
+      // Step 0: "Looking through your year..."
+      setProcessingStepIndex(0);
       const conversations = await parseInstagramZip(file, setProgressMsg);
-      setProgressMsg('Counting interactions & ranking connections...');
       
-      await new Promise(r => setTimeout(r, 800));
+      // Step 1: "Finding your conversations..."
+      setProcessingStepIndex(1);
+      await new Promise(r => setTimeout(r, 1000));
+      
+      // Step 2: "Finding your people..."
+      setProcessingStepIndex(2);
       const stats = calculateStats(conversations, exportRange);
+      await new Promise(r => setTimeout(r, 1000));
       
-      setProgressMsg('Rendering cinematic experience...');
+      // Step 3: "Finding your patterns..."
+      setProcessingStepIndex(3);
       await new Promise(r => setTimeout(r, 1200));
       
+      // Step 4: "Your Wrapped is ready."
+      setProcessingStepIndex(4);
       setAnalyzedStats(stats);
+      await new Promise(r => setTimeout(r, 800));
+      
       setStatus('ready');
     } catch (err: any) {
       setStatus('error');
@@ -57,141 +79,130 @@ const UploadZone: React.FC<Props> = ({ onDataLoaded, exportRange }) => {
 
   return (
     <div 
-      className={`relative w-full rounded-3xl transition-all duration-300 ${
-        isDragging ? 'scale-[1.02] shadow-2xl shadow-insta-purple/20' : 'scale-100'
+      className={`relative w-full max-w-3xl mx-auto rounded-[3rem] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        isDragging 
+          ? 'scale-[1.02] bg-[#1a1a1a] shadow-[0_0_120px_rgba(225,48,108,0.15)] ring-1 ring-white/20' 
+          : 'scale-100 bg-[#111] hover:bg-[#161616] shadow-2xl ring-1 ring-white/5'
       }`}
       onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
       onDragLeave={() => setIsDragging(false)}
       onDrop={handleDrop}
     >
-      <div className={`absolute inset-0 rounded-3xl bg-gradient-to-r from-insta-purple via-insta-pink to-insta-orange blur-xl transition-opacity duration-500 ${isDragging || status === 'processing' ? 'opacity-30' : 'opacity-0 hover:opacity-10'}`} />
-      
-      <div className={`relative glass-card overflow-hidden border-2 transition-colors duration-300 ${
-        isDragging ? 'border-insta-pink bg-white/10' : 
-        status === 'error' ? 'border-red-500/50' : 
-        'border-white/10 hover:border-white/20'
-      }`}>
-        
-        <div className="p-8 md:p-12 text-center flex flex-col items-center justify-center min-h-[300px]">
-          <AnimatePresence mode="wait">
-            
-            {status === 'idle' && (
-              <motion.div 
-                key="idle"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                className="flex flex-col items-center"
+      <div className="p-12 md:p-24 text-center flex flex-col items-center justify-center min-h-[450px]">
+        <AnimatePresence mode="wait">
+          
+          {status === 'idle' && (
+            <motion.div 
+              key="idle"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, filter: 'blur(10px)' }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-col items-center"
+            >
+              <h3 className="text-[2.5rem] font-bold tracking-tight mb-4 leading-tight text-white">
+                Drop your Instagram <br/> export here
+              </h3>
+              <p className="text-xl text-white/40 mb-12 font-medium">
+                100% local processing. No cloud uploads.
+              </p>
+              
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="px-10 py-5 bg-white text-black text-lg font-bold rounded-full active:scale-95 transition-transform spatial-shadow"
               >
-                <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-6 text-white/50">
-                  <UploadCloud className="w-8 h-8" />
-                </div>
-                <h3 className="text-2xl font-bold mb-2">Drop your Instagram export here</h3>
-                <p className="text-white/50 mb-8">Supports official Instagram data .zip files. Everything is processed safely on your device.</p>
-                
-                <button 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="px-8 py-4 bg-white text-black font-bold rounded-full hover:scale-105 transition-transform"
+                Choose ZIP File
+              </button>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={(e) => e.target.files && processFile(e.target.files[0])}
+                className="hidden" 
+                accept=".zip" 
+              />
+            </motion.div>
+          )}
+
+          {status === 'processing' && (
+            <motion.div 
+              key="processing"
+              initial={{ opacity: 0, scale: 1.05, filter: 'blur(10px)' }}
+              animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -20, filter: 'blur(10px)' }}
+              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-col items-center justify-center w-full relative"
+            >
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-insta-pink/10 blur-[80px] rounded-full animate-pulse" />
+              
+              <AnimatePresence mode="wait">
+                <motion.h3 
+                  key={processingStepIndex}
+                  initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }}
+                  animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, y: -10, filter: 'blur(4px)' }}
+                  transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  className="text-3xl font-bold tracking-tight text-white relative z-10"
                 >
-                  Choose ZIP File
-                </button>
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  onChange={(e) => e.target.files && processFile(e.target.files[0])}
-                  className="hidden" 
-                  accept=".zip" 
-                />
-              </motion.div>
-            )}
+                  {PROCESSING_STEPS[processingStepIndex]}
+                </motion.h3>
+              </AnimatePresence>
+            </motion.div>
+          )}
 
-            {status === 'processing' && (
-              <motion.div 
-                key="processing"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex flex-col items-center w-full max-w-sm"
+          {status === 'ready' && analyzedStats && (
+            <motion.div
+              key="ready"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-col items-center w-full max-w-sm"
+            >
+              <h3 className="text-5xl font-bold tracking-tighter mb-4 text-white">Ready.</h3>
+              <p className="text-xl text-white/50 font-medium mb-12">
+                {analyzedStats.actualDateRange 
+                  ? `${analyzedStats.actualDateRange.formattedDuration} of data discovered.` 
+                  : `Your Instagram export has been analyzed.`}
+              </p>
+
+              <button 
+                onClick={() => onDataLoaded(analyzedStats)}
+                className="w-full flex items-center justify-center gap-3 py-5 rounded-full bg-white text-black font-bold text-xl active:scale-95 transition-transform spatial-shadow group"
               >
-                <Loader2 className="w-12 h-12 text-insta-pink animate-spin mb-6" />
-                <h3 className="text-xl font-bold mb-2">Building your Wrapped...</h3>
-                <div className="w-full bg-white/5 rounded-full h-1.5 mb-4 overflow-hidden relative">
-                  <div className="absolute inset-y-0 left-0 bg-insta-gradient w-1/2 rounded-full animate-[pulse_2s_ease-in-out_infinite] shadow-[0_0_10px_rgba(225,48,108,0.5)]" />
-                </div>
-                <p className="text-white/70 font-medium text-center">{progressMsg}</p>
-              </motion.div>
-            )}
+                Show my Wrapped
+                <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+              </button>
 
-            {status === 'ready' && analyzedStats && (
-              <motion.div
-                key="ready"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="flex flex-col items-center w-full max-w-sm"
+              {import.meta.env.DEV && (
+                <div className="mt-12 p-6 bg-black/80 rounded-2xl w-full text-left text-xs font-mono text-white/50">
+                  <div className="text-white mb-2">DEBUG INFO</div>
+                  <div>Total messages: {analyzedStats.totalMessages}</div>
+                  <div>Unique participants: {analyzedStats.uniqueContacts}</div>
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {status === 'error' && (
+            <motion.div 
+              key="error"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center"
+            >
+              <AlertCircle className="w-12 h-12 text-red-500 mb-6" />
+              <h3 className="text-3xl font-bold mb-4 text-white tracking-tight">Something went wrong</h3>
+              <p className="text-xl text-red-400/80 mb-12 max-w-sm font-medium">{errorMsg}</p>
+              
+              <button 
+                onClick={() => setStatus('idle')}
+                className="px-8 py-4 bg-white/10 text-white font-bold rounded-full active:scale-95 transition-transform"
               >
-                <div className="w-16 h-16 rounded-full bg-insta-purple/20 flex items-center justify-center mb-4 text-insta-pink">
-                  <CheckCircle2 className="w-8 h-8" />
-                </div>
-                <h3 className="text-2xl font-bold mb-2">Export analyzed</h3>
-                {analyzedStats.actualDateRange ? (
-                  <p className="text-white/70 font-medium mb-6">{analyzedStats.actualDateRange.formattedDuration} of Instagram data found.</p>
-                ) : (
-                  <p className="text-white/70 font-medium mb-6">Your Instagram export has been analyzed.</p>
-                )}
-                
-                <p className="text-white mb-8">Ready to see your Wrapped?</p>
+                Try Again
+              </button>
+            </motion.div>
+          )}
 
-                <button 
-                  onClick={() => onDataLoaded(analyzedStats)}
-                  className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-white text-black font-bold text-lg hover:scale-[1.02] transition-transform group"
-                >
-                  Show my Wrapped
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </button>
-
-                {import.meta.env.DEV && (
-                  <div className="mt-8 p-4 bg-black/50 border border-white/20 rounded-xl w-full text-left text-xs font-mono overflow-y-auto max-h-64">
-                    <div className="text-insta-pink font-bold mb-2">DEBUG PANEL</div>
-                    <div>Total raw messages: {analyzedStats.debug?.totalRawMessages}</div>
-                    <div>Total normalized messages: {analyzedStats.totalMessages}</div>
-                    <div>Excluded messages: {analyzedStats.debug?.excludedMessages}</div>
-                    <div>Duplicate messages: 0</div>
-                    <div>Conversations: {analyzedStats.debug?.mergedConversationsCount}</div>
-                    <div>Unique participants: {analyzedStats.uniqueContacts}</div>
-                    <div>Earliest timestamp: {analyzedStats.actualDateRange ? new Date(analyzedStats.actualDateRange.earliest).toLocaleString() : 'N/A'}</div>
-                    <div>Latest timestamp: {analyzedStats.actualDateRange ? new Date(analyzedStats.actualDateRange.latest).toLocaleString() : 'N/A'}</div>
-                    <div className="mt-2 font-bold">Top 10 connections:</div>
-                    {analyzedStats.topConnections.map((c, i) => (
-                      <div key={i}>{i+1}. {c.name} ({c.messageCount} msgs, {c.interactionScore} score)</div>
-                    ))}
-                  </div>
-                )}
-              </motion.div>
-            )}
-
-            {status === 'error' && (
-              <motion.div 
-                key="error"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="flex flex-col items-center"
-              >
-                <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-6 text-red-400">
-                  <AlertCircle className="w-8 h-8" />
-                </div>
-                <h3 className="text-2xl font-bold mb-2 text-white">Something went wrong</h3>
-                <p className="text-red-400 mb-8 max-w-sm">{errorMsg}</p>
-                
-                <button 
-                  onClick={() => setStatus('idle')}
-                  className="px-6 py-3 bg-white/10 text-white font-medium rounded-full hover:bg-white/20 transition-colors"
-                >
-                  Try Again
-                </button>
-              </motion.div>
-            )}
-
-          </AnimatePresence>
-        </div>
+        </AnimatePresence>
       </div>
     </div>
   );

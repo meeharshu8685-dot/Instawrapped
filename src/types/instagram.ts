@@ -104,3 +104,15 @@ export interface WrappedStats {
     description: string;
   };
 }
+
+export interface SharedStats {
+  ownerName: string;
+  year: number;
+  totalMessages: number;
+  topConnection: string | null;
+  topConnectionCount: number | null;
+  peakMonth: string;
+  archetypeTitle: string;
+  // Options
+  showExactNumbers: boolean;
+}
