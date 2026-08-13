@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Share } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import UploadZone from './UploadZone';
 import ExportRangeSelection from './ExportRangeSelection';
@@ -174,10 +174,34 @@ const LandingPage: React.FC<Props> = ({ stats, onViewWrapped, onDataLoaded, onDe
 
       {/* FOOTER */}
       <footer className="w-full py-24 text-center bg-[#0a0a0a]">
-        <div className="flex flex-wrap justify-center items-center gap-12 mb-16 text-lg font-bold text-white/30">
-          <button onClick={() => setActivePage('how-it-works')} className="hover:text-white transition-colors">How it works</button>
-          <button onClick={() => setActivePage('privacy')} className="hover:text-white transition-colors">Privacy</button>
-          <button onClick={() => { if(stats) setShowShareMenu(true); else scrollToUpload(); }} className="hover:text-white transition-colors">Share</button>
+        <div className="flex flex-col items-center justify-center gap-8 mb-16">
+          <button 
+            onClick={async () => {
+              try {
+                if (navigator.share) {
+                  await navigator.share({
+                    title: 'InstaWrapped',
+                    text: 'Create your Instagram Wrapped 2026',
+                    url: 'https://instawrapped-dun.vercel.app/'
+                  });
+                } else {
+                  await navigator.clipboard.writeText('https://instawrapped-dun.vercel.app/');
+                  alert('Link copied to clipboard!');
+                }
+              } catch (e) {
+                console.error(e);
+              }
+            }}
+            className="px-6 py-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors font-bold text-white flex items-center gap-2"
+          >
+            <Share className="w-4 h-4" /> Share with a friend
+          </button>
+          
+          <div className="flex flex-wrap justify-center items-center gap-12 text-lg font-bold text-white/30">
+            <button onClick={() => setActivePage('how-it-works')} className="hover:text-white transition-colors">How it works</button>
+            <button onClick={() => setActivePage('privacy')} className="hover:text-white transition-colors">Privacy</button>
+            <button onClick={() => { if(stats) setShowShareMenu(true); else scrollToUpload(); }} className="hover:text-white transition-colors">Export</button>
+          </div>
         </div>
         <p className="text-white/20 font-medium">Made by Harshu with 🤎</p>
       </footer>

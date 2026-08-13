@@ -5,7 +5,7 @@ import type { WrappedStats } from '../types/instagram';
 import ShareCard from './ShareCard';
 import ShareMenu from './ShareMenu';
 import { LayoutGrid, Eye, EyeOff, Volume2, VolumeX, Share } from 'lucide-react';
-
+import { shareElementAsImage } from '../utils/shareUtils';
 interface SlideProps {
   stats: WrappedStats;
   showNames?: boolean;
@@ -58,6 +58,8 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
   const [showNames, setShowNames] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const [direction, setDirection] = useState(1);
+  const [isSharingSlide, setIsSharingSlide] = useState(false);
 
   // Time tracking for progress bar
   const SLIDE_DURATION = 6000; // 6 seconds
@@ -108,6 +110,7 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
 
   const nextSlide = () => {
     if (currentSlide < TOTAL_SLIDES - 1) {
+      setDirection(1);
       setCurrentSlide(p => p + 1);
       setProgress(0);
       triggerSlideEffects(currentSlide + 1);
@@ -116,6 +119,7 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
 
   const prevSlide = () => {
     if (currentSlide > 0) {
+      setDirection(-1);
       setCurrentSlide(p => p - 1);
       setProgress(0);
     }
@@ -257,38 +261,62 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
         </button>
       </div>
 
+      {/* Share to Story Button (Bottom Center) */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50 controls-layer">
+        <button 
+          onClick={async (e) => {
+            e.stopPropagation();
+            setIsPaused(true);
+            setIsSharingSlide(true);
+            await shareElementAsImage('slide-capture-zone');
+            setIsSharingSlide(false);
+            setIsPaused(false);
+          }} 
+          className="px-5 py-2.5 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 transition-colors text-white/80 hover:text-white flex items-center gap-2 text-sm font-medium border border-white/5"
+        >
+          {isSharingSlide ? <span className="animate-pulse">Capturing...</span> : (
+            <>
+              <Share className="w-4 h-4" /> Share to Story
+            </>
+          )}
+        </button>
+      </div>
+
       {/* Slide Content Area */}
       <div 
         className="absolute inset-0 flex items-center justify-center z-10"
         onClick={handleTap}
       >
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentSlide}
-            initial={{ opacity: 0, scale: 0.95, filter: 'blur(10px)' }}
-            animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-            exit={{ opacity: 0, scale: 1.05, filter: 'blur(10px)' }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className={`w-full h-full flex flex-col items-center justify-center p-6 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isPaused ? 'scale-[0.96] opacity-90' : 'scale-100'}`}
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.1}
-            onDragEnd={(_, { offset }) => {
-              const swipe = offset.x;
-              if (swipe < -50) nextSlide();
-              else if (swipe > 50) prevSlide();
-            }}
-          >
-            {/* Slide Midground Parallax */}
-            <motion.div 
-              className="absolute inset-0 flex items-center justify-center pointer-events-none"
-              animate={{ x: mousePos.x * 0.5, y: mousePos.y * 0.5 }}
-              transition={{ type: 'spring', damping: 40, stiffness: 100 }}
+        <div id="slide-capture-zone" className="absolute inset-0 flex items-center justify-center pointer-events-none bg-transparent">
+          <AnimatePresence mode="popLayout" custom={direction}>
+            <motion.div
+              key={currentSlide}
+              custom={direction}
+              initial={{ opacity: 0, x: direction * 50, filter: 'blur(10px)', scale: 0.95 }}
+              animate={{ opacity: 1, x: 0, filter: 'blur(0px)', scale: 1 }}
+              exit={{ opacity: 0, x: direction * -50, filter: 'blur(10px)', scale: 1.05 }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className={`w-full h-full flex flex-col items-center justify-center p-6 pointer-events-auto transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isPaused && !isSharingSlide ? 'scale-[0.96] opacity-90' : 'scale-100'}`}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.2}
+              onDragEnd={(_, { offset, velocity }) => {
+                const swipe = offset.x;
+                if (swipe < -50 || velocity.x < -500) nextSlide();
+                else if (swipe > 50 || velocity.x > 500) prevSlide();
+              }}
             >
-              <CurrentSlideComponent stats={stats} showNames={showNames} onReset={onReset} onExplore={onExplore} onShareClick={() => setShowShareMenu(true)} />
+              {/* Slide Midground Parallax */}
+              <motion.div 
+                className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                animate={{ x: mousePos.x * 0.5, y: mousePos.y * 0.5 }}
+                transition={{ type: 'spring', damping: 40, stiffness: 100 }}
+              >
+                <CurrentSlideComponent stats={stats} showNames={showNames} onExplore={onExplore} onShareClick={() => setShowShareMenu(true)} />
+              </motion.div>
             </motion.div>
-          </motion.div>
-        </AnimatePresence>
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );
