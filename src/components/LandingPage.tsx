@@ -179,7 +179,7 @@ const LandingPage: React.FC<Props> = ({ stats, onViewWrapped, onDataLoaded, onDe
           <button onClick={() => setActivePage('privacy')} className="hover:text-white transition-colors">Privacy</button>
           <button onClick={() => { if(stats) setShowShareMenu(true); else scrollToUpload(); }} className="hover:text-white transition-colors">Share</button>
         </div>
-        <p className="text-white/20 font-medium">Made by Harshu with love 🤎</p>
+        <p className="text-white/20 font-medium">Made by Harshu with 🤎</p>
       </footer>
     </div>
   );
