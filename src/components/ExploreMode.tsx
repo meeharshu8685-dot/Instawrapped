@@ -25,14 +25,14 @@ const ExploreMode: React.FC<Props> = ({ stats, onBack, onReset }) => {
       opacity: 1, 
       y: 0, 
       scale: 1,
-      transition: { type: 'spring', damping: 25, stiffness: 200 }
+      transition: { type: 'spring' as const, damping: 25, stiffness: 200 }
     }
   };
 
-  const BentoCard = ({ children, className = "", delay = 0 }: { children: React.ReactNode, className?: string, delay?: number }) => (
+  const BentoCard = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
     <motion.div 
       variants={itemVariants}
-      whileHover={{ y: -4, scale: 1.01, transition: { type: 'spring', damping: 20, stiffness: 300 } }}
+      whileHover={{ y: -4, scale: 1.01, transition: { type: 'spring' as const, damping: 20, stiffness: 300 } }}
       className={`bg-white/[0.03] border border-white/[0.08] backdrop-blur-2xl rounded-[2rem] p-8 md:p-10 spatial-shadow flex flex-col relative overflow-hidden group ${className}`}
     >
       <div className="absolute inset-0 bg-gradient-to-br from-white/[0.05] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
