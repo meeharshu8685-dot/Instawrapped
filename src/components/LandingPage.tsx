@@ -156,18 +156,35 @@ const LandingPage: React.FC<Props> = ({ stats, onViewWrapped, onDataLoaded, onDe
                     ← Change export range
                   </button>
                   <UploadZone onDataLoaded={onDataLoaded} exportRange={exportRange} />
-                  
-                  <div className="pt-24 text-center space-y-4">
-                    <button 
-                      onClick={onDemoLoaded}
-                      className="text-white/40 font-bold hover:text-white transition-colors"
-                    >
-                      Try with sample data instead
-                    </button>
-                    <p className="text-white/30 text-sm font-medium pt-8 flex items-center justify-center gap-2 max-w-sm mx-auto">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
-                      We never receive your Instagram ZIP. Everything is processed locally on your device.
-                    </p>
+                  <div className="pt-16 pb-8 text-center space-y-12">
+                    {/* Privacy Section */}
+                    <div className="flex flex-col items-center justify-center space-y-3 px-6 max-w-lg mx-auto">
+                      <h3 className="text-xl md:text-2xl font-bold tracking-tight text-white/90">
+                        ☕ We came for the stats. Not the tea.
+                      </h3>
+                      <p className="text-base md:text-lg text-white/60 font-medium">
+                        Your private Instagram data never leaves your device.
+                      </p>
+                      <p className="text-sm md:text-base text-white/30 font-medium">
+                        Your ZIP stays on your device. We never get a copy.
+                      </p>
+                      <button 
+                        onClick={() => setActivePage('how-it-works')} 
+                        className="pt-3 text-sm font-semibold text-white/40 hover:text-white transition-colors underline decoration-white/20 underline-offset-4"
+                      >
+                        How does this work?
+                      </button>
+                    </div>
+
+                    {/* Sample Data Fallback */}
+                    <div className="pt-8 border-t border-white/5 max-w-xs mx-auto">
+                      <button 
+                        onClick={onDemoLoaded}
+                        className="text-white/30 text-sm font-bold hover:text-white transition-colors"
+                      >
+                        Try with sample data instead
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
