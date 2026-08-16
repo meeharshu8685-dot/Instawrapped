@@ -653,6 +653,7 @@ const SlideReelsWatched = ({ stats }: { stats: WrappedStats }) => {
   const [displayCount, setDisplayCount] = useState(0);
 
   useEffect(() => {
+    let animId: number;
     const end = reels.totalWatched;
     const duration = 1600;
     const startTime = performance.now();
@@ -664,13 +665,16 @@ const SlideReelsWatched = ({ stats }: { stats: WrappedStats }) => {
       setDisplayCount(Math.floor(easeOut * end));
 
       if (progress < 1) {
-        requestAnimationFrame(updateCounter);
+        animId = requestAnimationFrame(updateCounter);
       } else {
         setDisplayCount(end);
       }
     };
 
-    requestAnimationFrame(updateCounter);
+    animId = requestAnimationFrame(updateCounter);
+    return () => {
+      if (animId) cancelAnimationFrame(animId);
+    };
   }, [reels.totalWatched]);
 
   return (

@@ -1,3 +1,4 @@
+import React from 'react';
 import { motion } from 'framer-motion';
 import type { WrappedStats } from '../types/instagram';
 import { Calendar, Flame, Clock, Sparkles } from 'lucide-react';
@@ -15,13 +16,19 @@ export const formatMonthTitle = (monthStr: string): string => {
   return monthStr;
 };
 
-export const SlideSocialCircle = ({ stats, showNames }: { stats: WrappedStats, showNames?: boolean }) => {
+export const SlideSocialCircle: React.FC<{ stats: WrappedStats, showNames?: boolean }> = ({ stats, showNames = true }) => {
   const top = (stats.topConnections || []).slice(0, 8);
   const maxMessages = top[0]?.messageCount || 1;
+  const count = Math.max(top.length, 1);
 
   return (
     <div className="w-full px-4 flex flex-col justify-center items-center h-full max-w-lg mx-auto py-6 overflow-hidden">
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-2">
+      <motion.div 
+        initial={{ opacity: 0, y: -10 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ duration: 0.5 }}
+        className="text-center mb-2"
+      >
         <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-white/10 border border-white/10 text-[10px] md:text-xs font-bold tracking-widest text-white/80 uppercase mb-1.5 backdrop-blur-md">
           <Sparkles className="w-3 h-3 text-insta-yellow" /> Gravitational Pull
         </div>
@@ -29,54 +36,52 @@ export const SlideSocialCircle = ({ stats, showNames }: { stats: WrappedStats, s
       </motion.div>
       
       {/* Visual Solar System Graph */}
-      <div className="relative w-full max-w-[270px] sm:max-w-[320px] h-56 sm:h-64 my-2 sm:my-3 mx-auto flex items-center justify-center">
+      <div className="relative w-full max-w-[280px] sm:max-w-[340px] h-60 sm:h-72 my-2 sm:my-3 mx-auto flex items-center justify-center">
         {/* Orbital rings with ambient glow */}
-        <div className="absolute w-[180px] sm:w-[210px] h-[180px] sm:h-[210px] rounded-full border border-white/15 pointer-events-none shadow-[0_0_20px_rgba(255,255,255,0.05)]" />
-        <div className="absolute w-[240px] sm:w-[280px] h-[240px] sm:h-[280px] rounded-full border border-dashed border-white/10 pointer-events-none" />
+        <div className="absolute w-[170px] sm:w-[200px] h-[170px] sm:h-[200px] rounded-full border border-white/15 pointer-events-none shadow-[0_0_20px_rgba(255,255,255,0.05)]" />
+        <div className="absolute w-[230px] sm:w-[270px] h-[230px] sm:h-[270px] rounded-full border border-dashed border-white/10 pointer-events-none" />
 
         {/* Center Node (YOU) */}
         <motion.div 
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: 'spring', damping: 12 }}
-          className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-tr from-white via-white/90 to-white/70 text-black font-black flex items-center justify-center text-xs sm:text-sm shadow-[0_0_30px_rgba(255,255,255,0.8)] z-20 ring-4 ring-white/20"
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', damping: 14, stiffness: 140 }}
+          className="absolute z-20 w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-tr from-white via-white/95 to-white/70 text-black font-black flex items-center justify-center text-xs sm:text-sm shadow-[0_0_30px_rgba(255,255,255,0.8)] ring-4 ring-white/20"
         >
           YOU
         </motion.div>
 
         {/* Orbiting Satellite Nodes */}
         {top.map((conn, i) => {
-          const ratio = conn.messageCount / maxMessages;
-          const nodeSize = 32 + ratio * 20; 
-          const angle = (i / top.length) * (2 * Math.PI) - (Math.PI / 2);
-          const baseR = 90;
-          const r = baseR + (i % 2) * 30;
-          const x = Math.cos(angle) * r;
-          const y = Math.sin(angle) * r;
+          const ratio = maxMessages > 0 ? (conn.messageCount || 0) / maxMessages : 1;
+          const nodeSize = Math.max(26, Math.min(48, 28 + ratio * 18)); 
+          const angle = (i / count) * (2 * Math.PI) - (Math.PI / 2);
+          const baseR = 82;
+          const r = baseR + (i % 2) * 26;
+          const targetX = Math.round(Math.cos(angle) * r);
+          const targetY = Math.round(Math.sin(angle) * r);
+          const displayName = showNames ? (conn.name ? conn.name.split(' ')[0] : 'Friend') : 'Friend';
 
           return (
             <motion.div
-              key={conn.name}
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.25 + (i * 0.07), type: 'spring' }}
-              className="absolute z-10 flex flex-col items-center pointer-events-none"
-              style={{
-                transform: `translate(${x}px, ${y}px)`,
-              }}
+              key={`${conn.name || 'contact'}-${i}`}
+              initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
+              animate={{ opacity: 1, scale: 1, x: targetX, y: targetY }}
+              transition={{ delay: 0.15 + (i * 0.05), type: 'spring', damping: 15, stiffness: 120 }}
+              className="absolute z-10 flex flex-col items-center pointer-events-none -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2"
             >
               <div 
                 style={{ width: `${nodeSize}px`, height: `${nodeSize}px` }}
-                className="rounded-full bg-gradient-to-tr from-white/30 to-white/10 border border-white/40 flex items-center justify-center backdrop-blur-md shadow-[0_4px_15px_rgba(0,0,0,0.4)]"
+                className="rounded-full bg-gradient-to-tr from-white/30 to-white/10 border border-white/40 flex items-center justify-center backdrop-blur-md shadow-[0_4px_15px_rgba(0,0,0,0.5)]"
               >
                 <div 
                   style={{ width: `${nodeSize * 0.45}px`, height: `${nodeSize * 0.45}px` }}
                   className="rounded-full bg-white/90 shadow-sm"
                 />
               </div>
-              {ratio > 0.2 && (
-                <span className="text-[9px] sm:text-[10px] font-black text-white px-1.5 py-0.5 rounded-full bg-black/70 border border-white/10 shadow mt-1 max-w-[65px] sm:max-w-[80px] truncate block text-center backdrop-blur-sm">
-                  {showNames ? conn.name.split(' ')[0] : 'HIDDEN'}
+              {ratio > 0.15 && (
+                <span className="text-[9px] sm:text-[10px] font-black text-white px-1.5 py-0.5 rounded-full bg-black/75 border border-white/10 shadow mt-1 max-w-[65px] sm:max-w-[80px] truncate block text-center backdrop-blur-sm">
+                  {displayName}
                 </span>
               )}
             </motion.div>
@@ -87,7 +92,7 @@ export const SlideSocialCircle = ({ stats, showNames }: { stats: WrappedStats, s
       <motion.div 
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.7 }}
+        transition={{ delay: 0.6 }}
         className="text-center mt-2"
       >
         <div className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tighter mb-0.5 text-white drop-shadow-md">
@@ -101,9 +106,9 @@ export const SlideSocialCircle = ({ stats, showNames }: { stats: WrappedStats, s
   );
 };
 
-export const SlideCalendar = ({ stats }: { stats: WrappedStats }) => {
+export const SlideCalendar: React.FC<{ stats: WrappedStats }> = ({ stats }) => {
   const cal = stats.socialCalendar || [];
-  if (cal.length === 0) return <div className="text-2xl font-bold">No calendar data</div>;
+  if (cal.length === 0) return <div className="text-2xl font-bold text-center text-white/50">No calendar data available</div>;
   const mostActive = [...cal].sort((a, b) => b.total - a.total)[0] || { total: 1, date: 'N/A' };
   
   return (
@@ -136,7 +141,7 @@ export const SlideCalendar = ({ stats }: { stats: WrappedStats }) => {
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.4 }}
+        transition={{ delay: 0.35 }}
         className="w-full max-w-[340px] sm:max-w-md mx-auto grid grid-cols-12 gap-1 sm:gap-1.5 justify-center p-3 sm:p-4 bg-black/30 rounded-3xl border border-white/10 backdrop-blur-md shadow-2xl"
       >
         {cal.slice(-108).map((day, i) => {
@@ -149,10 +154,10 @@ export const SlideCalendar = ({ stats }: { stats: WrappedStats }) => {
           
           return (
             <motion.div 
-              key={day.date}
+              key={`${day.date}-${i}`}
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ delay: 0.15 + (i * 0.003) }}
+              transition={{ delay: 0.1 + (i * 0.003) }}
               className={`aspect-square w-full rounded-sm ${bgClass}`}
               title={`${day.date}: ${day.total} messages`}
             />
@@ -166,7 +171,7 @@ export const SlideCalendar = ({ stats }: { stats: WrappedStats }) => {
   );
 };
 
-export const SlideStreak = ({ stats, showNames }: { stats: WrappedStats, showNames?: boolean }) => {
+export const SlideStreak: React.FC<{ stats: WrappedStats, showNames?: boolean }> = ({ stats, showNames = true }) => {
   const streak = stats.longestDayStreak;
   if (!streak) return <div className="text-xl sm:text-2xl px-8 text-center text-white/50">Not enough consistent back-and-forth for a streak.</div>;
   
@@ -202,14 +207,14 @@ export const SlideStreak = ({ stats, showNames }: { stats: WrappedStats, showNam
         transition={{ delay: 0.7 }}
         className="text-base sm:text-lg md:text-2xl text-white/80 font-semibold px-2 break-words"
       >
-        with <span className="text-white font-black underline decoration-insta-orange decoration-2 underline-offset-4">{showNames ? streak.name : 'Hidden'}</span>
+        with <span className="text-white font-black underline decoration-insta-orange decoration-2 underline-offset-4">{showNames ? (streak.name || 'Friend') : 'Friend'}</span>
       </motion.p>
 
       {streak.startDate && streak.endDate && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1 }}
+          transition={{ delay: 0.9 }}
           className="mt-6 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/10 text-xs sm:text-sm text-white/60 font-semibold tracking-wider uppercase mx-auto"
         >
           <Clock className="w-3.5 h-3.5 text-white/50" />
@@ -220,7 +225,7 @@ export const SlideStreak = ({ stats, showNames }: { stats: WrappedStats, showNam
   );
 };
 
-export const SlideMonthly = ({ stats, showNames }: { stats: WrappedStats, showNames?: boolean }) => {
+export const SlideMonthly: React.FC<{ stats: WrappedStats, showNames?: boolean }> = ({ stats, showNames = true }) => {
   const months = stats.monthlyTopConnections || [];
   if (months.length === 0) return null;
   const maxCount = Math.max(...months.map(m => m.count), 1);
@@ -247,7 +252,7 @@ export const SlideMonthly = ({ stats, showNames }: { stats: WrappedStats, showNa
 
           return (
             <motion.div 
-              key={m.month}
+              key={`${m.month}-${i}`}
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.08 }}
@@ -264,7 +269,7 @@ export const SlideMonthly = ({ stats, showNames }: { stats: WrappedStats, showNa
 
               <div className="flex items-baseline justify-between">
                 <span className="text-base sm:text-lg md:text-2xl font-black tracking-tight text-white truncate max-w-full">
-                  {showNames ? m.name : 'Top Contact'}
+                  {showNames ? (m.name || 'Top Contact') : 'Top Contact'}
                 </span>
               </div>
 
