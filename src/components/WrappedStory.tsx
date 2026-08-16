@@ -6,6 +6,7 @@ import ShareCard from './ShareCard';
 import ShareMenu from './ShareMenu';
 import { LayoutGrid, Eye, EyeOff, Volume2, VolumeX, Share2, RotateCcw, Sparkles, Download, ArrowRight, Heart } from 'lucide-react';
 import { shareElementAsImage } from '../utils/shareUtils';
+import { soundEngine } from '../utils/soundEngine';
 import { SlideSocialCircle, SlideCalendar, SlideStreak as SlideAdvancedStreak, SlideMonthly } from './WrappedStoryAdvancedSlides';
 
 const SLIDE_THEMES = [
@@ -123,6 +124,12 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
   
   const [currentSlide, setCurrentSlide] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(false);
+
+  const handleToggleSound = () => {
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    soundEngine.setMuted(!next);
+  };
   const [showNames, setShowNames] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
@@ -134,7 +141,9 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
 
   // Confetti on final slide
   useEffect(() => {
+    soundEngine.playSlideTransition(currentSlide);
     if (currentSlide === TOTAL_SLIDES - 1) {
+      soundEngine.playCelebrationFanfare();
       confetti({
         particleCount: 80,
         spread: 70,
@@ -298,10 +307,11 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
             {showNames ? <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <EyeOff className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/40" />}
           </button>
           <button 
-            onClick={() => setSoundEnabled(!soundEnabled)} 
-            className="p-2 sm:p-2.5 rounded-full bg-black/30 backdrop-blur-md hover:bg-black/50 border border-white/10 transition-colors text-white/90 hidden md:block active:scale-95"
+            onClick={handleToggleSound} 
+            className="p-2 sm:p-2.5 rounded-full bg-black/30 backdrop-blur-md hover:bg-black/50 border border-white/10 transition-colors text-white/90 active:scale-95 flex items-center justify-center"
+            title={soundEnabled ? "Mute audio" : "Enable sound & music"}
           >
-            {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-white/40" />}
+            {soundEnabled ? <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-insta-yellow animate-pulse" /> : <VolumeX className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/50" />}
           </button>
         </div>
       </div>
