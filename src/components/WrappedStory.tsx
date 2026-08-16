@@ -4,23 +4,24 @@ import confetti from 'canvas-confetti';
 import type { WrappedStats } from '../types/instagram';
 import ShareCard from './ShareCard';
 import ShareMenu from './ShareMenu';
-import { LayoutGrid, Eye, EyeOff, Volume2, VolumeX, Share } from 'lucide-react';
+import { VideoModal } from './VideoModal';
+import { LayoutGrid, Eye, EyeOff, Volume2, VolumeX, Share, Film, RotateCcw, Sparkles } from 'lucide-react';
 import { shareElementAsImage } from '../utils/shareUtils';
 import { SlideSocialCircle, SlideCalendar, SlideTopRankings, SlideStreak as SlideAdvancedStreak, SlideMonthly } from './WrappedStoryAdvancedSlides';
 
 const SLIDE_THEMES = [
-  '#405DE6', // 0: Intro (Royal Blue)
+  '#3B5998', // 0: Intro (Royal Blue)
   '#E1306C', // 1: Total (Vibrant Pink)
   '#833AB4', // 2: Social Circle (Deep Purple)
-  '#009688', // 3: Top 1 (Teal)
+  '#00897B', // 3: Top 1 (Teal)
   '#F56040', // 4: Top 5 (Orange)
   '#C13584', // 5: Calendar (Magenta)
-  '#FD1D1D', // 6: Peak (Red)
+  '#E53935', // 6: Peak (Red)
   '#5851DB', // 7: Streak (Indigo)
-  '#1E1E1E', // 8: Monthly (Dark)
-  '#2C3E50', // 9: Multiple Rankings (Slate)
-  '#405DE6', // 10: Archetype
-  '#0A0A0A'  // 11: Share/End
+  '#4A154B', // 8: Monthly (Rich Plum)
+  '#0D5C75', // 9: Multiple Rankings (Deep Ocean)
+  '#D81B60', // 10: Archetype (Crimson)
+  '#1B0C2E'  // 11: Share/End (Deep Cosmic Purple with glow)
 ];
 
 const SLIDE_MARQUEES = [
@@ -35,7 +36,7 @@ const SLIDE_MARQUEES = [
   'MONTH BY MONTH',
   'TOP RANKINGS',
   'YOUR ARCHETYPE',
-  ''
+  'YOUR WRAPPED IS READY'
 ];
 
 const ScrollingMarquee = ({ text }: { text: string }) => {
@@ -50,7 +51,7 @@ const ScrollingMarquee = ({ text }: { text: string }) => {
           animate={{ x: i % 2 === 0 ? '-50%' : '0%' }}
           transition={{ duration: 25 + i * 2, repeat: Infinity, ease: 'linear' }}
         >
-          {text} â€¢ {text} â€¢ {text} â€¢ {text} â€¢ {text} â€¢ {text}
+          {text} • {text} • {text} • {text} • {text} • {text}
         </motion.div>
       ))}
     </div>
@@ -78,6 +79,8 @@ interface SlideProps {
   onReset?: () => void;
   onExplore?: () => void;
   onShareClick?: () => void;
+  onDownloadVideoClick?: () => void;
+  onReplay?: () => void;
 }
 
 interface Slide {
@@ -107,7 +110,7 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
     if (stats.monthlyTopConnections?.length > 0) slides.push({ id: 'monthly', component: SlideMonthly });
     slides.push({ id: 'rankings', component: SlideTopRankings });
     
-    // Optional extra slides
+    // Optional extra density/midnight slides
     if (stats.fastestDensity) slides.push({ id: 'density', component: SlideDensity });
     if (stats.midnightConnection) slides.push({ id: 'midnight', component: SlideMidnight });
     
@@ -125,6 +128,7 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
   const [showNames, setShowNames] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false);
   const [direction, setDirection] = useState(1);
   const [isSharingSlide, setIsSharingSlide] = useState(false);
 
@@ -135,8 +139,8 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
   const lastUpdateRef = useRef<number>(Date.now());
 
   useEffect(() => {
-    if (currentSlide === TOTAL_SLIDES - 1) return; // Stop on last slide
-    if (isPaused || showShareMenu) {
+    if (currentSlide === TOTAL_SLIDES - 1) return; // Stop timer on last slide
+    if (isPaused || showShareMenu || showVideoModal) {
       if (timerRef.current) cancelAnimationFrame(timerRef.current);
       lastUpdateRef.current = Date.now();
       return;
@@ -149,7 +153,7 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
         const next = prev + (delta / SLIDE_DURATION) * 100;
         if (next >= 100) {
           nextSlide();
-          return 0; // Handled by nextSlide, but just in case
+          return 0;
         }
         return next;
       });
@@ -163,9 +167,9 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
     return () => {
       if (timerRef.current) cancelAnimationFrame(timerRef.current);
     };
-  }, [currentSlide, isPaused, showShareMenu]);
+  }, [currentSlide, isPaused, showShareMenu, showVideoModal]);
 
-  // Keyboard Nav
+  // Keyboard Navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight') nextSlide();
@@ -192,15 +196,21 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
     }
   };
 
+  const replayWrapped = () => {
+    setDirection(-1);
+    setCurrentSlide(0);
+    setProgress(0);
+  };
+
   const triggerSlideEffects = (slideIndex: number) => {
-    const slideId = slides[slideIndex].id;
-    if (slideId === 'top1' || slideId === 'archetype') {
+    const slideId = slides[slideIndex]?.id;
+    if (slideId === 'top1' || slideId === 'archetype' || slideId === 'share') {
       confetti({
-        particleCount: 100,
+        particleCount: 90,
         spread: 70,
         origin: { y: 0.6 },
-        colors: ['#833ab4', '#fd1d1d', '#fcb045', '#e1306c'],
-        zIndex: 100 // Ensure it's over everything
+        colors: ['#833ab4', '#fd1d1d', '#fcb045', '#e1306c', '#405de6'],
+        zIndex: 100
       });
     }
     
@@ -230,7 +240,7 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
   };
 
   const handleTap = (e: React.MouseEvent) => {
-    if (isPaused) return; // Prevent tap triggering if we were holding
+    if (isPaused || currentSlide === TOTAL_SLIDES - 1) return;
     const clickX = e.clientX;
     const width = window.innerWidth;
     if (clickX < width * 0.3) {
@@ -241,12 +251,13 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
   };
 
   const CurrentSlideComponent = slides[currentSlide].component;
+  const isFinalSlide = currentSlide === TOTAL_SLIDES - 1;
 
-  // Subtle Parallax Effect based on pointer movement (if desktop)
+  // Subtle Parallax Effect on desktop
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const handleMouseMove = (e: React.MouseEvent) => {
     const { clientX, clientY } = e;
-    const x = (clientX / window.innerWidth - 0.5) * 20; // max 20px shift
+    const x = (clientX / window.innerWidth - 0.5) * 20;
     const y = (clientY / window.innerHeight - 0.5) * 20;
     setMousePos({ x, y });
   };
@@ -258,7 +269,7 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       onPointerDown={(e) => {
         if ((e.target as HTMLElement).closest('.controls-layer')) return;
-        setIsPaused(true);
+        if (!isFinalSlide) setIsPaused(true);
       }}
       onPointerUp={() => setIsPaused(false)}
       onPointerCancel={() => setIsPaused(false)}
@@ -269,6 +280,9 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
         {showShareMenu && (
           <ShareMenu stats={stats} onClose={() => setShowShareMenu(false)} />
         )}
+        {showVideoModal && (
+          <VideoModal stats={stats} showNames={showNames} onClose={() => setShowVideoModal(false)} />
+        )}
       </AnimatePresence>
       
       {/* Dynamic Background Ambience */}
@@ -277,20 +291,20 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
         animate={{ x: mousePos.x, y: mousePos.y }}
         transition={{ type: 'spring', damping: 40, stiffness: 100 }}
       >
-        <div className="absolute inset-0 bg-grain opacity-20 mix-blend-overlay" />
+        <div className="absolute inset-0 bg-grain opacity-25 mix-blend-overlay" />
         <GeometricMotifs />
         <ScrollingMarquee text={SLIDE_MARQUEES[currentSlide % SLIDE_MARQUEES.length]} />
       </motion.div>
 
       {/* Progress Bars (Top) */}
-      <div className="absolute top-0 left-0 right-0 p-4 pt-12 md:pt-8 z-50 flex gap-1.5 opacity-80 pointer-events-none controls-layer max-w-2xl mx-auto">
+      <div className="absolute top-0 left-0 right-0 p-4 pt-10 md:pt-6 z-50 flex gap-1.5 opacity-85 pointer-events-none controls-layer max-w-2xl mx-auto">
         {slides.map((_, i) => (
           <div key={i} className={`progress-segment ${i === currentSlide && isPaused ? 'opacity-50' : ''}`}>
             {i < currentSlide && <div className="progress-segment-fill w-full" />}
             {i === currentSlide && (
               <div 
                 className="progress-segment-fill"
-                style={{ width: `${progress}%` }}
+                style={{ width: `${isFinalSlide ? 100 : progress}%` }}
               />
             )}
           </div>
@@ -298,48 +312,68 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
       </div>
 
       {/* Controls (Top Left) */}
-      <div className="absolute top-16 md:top-12 left-6 z-50 controls-layer">
-        <button onClick={onReset} className="p-3 rounded-full bg-white/5 backdrop-blur-md hover:bg-white/10 transition-colors" title="Exit to Home">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      <div className="absolute top-14 md:top-10 left-5 z-50 controls-layer">
+        <button 
+          onClick={onReset} 
+          className="p-2.5 md:p-3 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 transition-colors text-white/90" 
+          title="Exit to Home"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
         </button>
       </div>
 
       {/* Controls (Top Right) */}
-      <div className="absolute top-16 md:top-12 right-6 z-50 flex gap-3 controls-layer">
-        <button onClick={() => setShowShareMenu(true)} className="p-3 rounded-full bg-white/5 backdrop-blur-md hover:bg-white/10 transition-colors text-white/80 hover:text-white" title="Share Wrapped">
-          <Share className="w-5 h-5" />
+      <div className="absolute top-14 md:top-10 right-5 z-50 flex gap-2.5 controls-layer">
+        <button 
+          onClick={() => setShowShareMenu(true)} 
+          className="p-2.5 md:p-3 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 transition-colors text-white/90" 
+          title="Share Wrapped"
+        >
+          <Share className="w-4 h-4 md:w-5 md:h-5" />
         </button>
-        <button onClick={onExplore} className="p-3 rounded-full bg-white/5 backdrop-blur-md hover:bg-white/10 transition-colors text-white/80 hover:text-white" title="Explore Data">
-          <LayoutGrid className="w-5 h-5" />
+        <button 
+          onClick={onExplore} 
+          className="p-2.5 md:p-3 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 transition-colors text-white/90" 
+          title="Explore Data"
+        >
+          <LayoutGrid className="w-4 h-4 md:w-5 md:h-5" />
         </button>
-        <button onClick={() => setShowNames(!showNames)} className="p-3 rounded-full bg-white/5 backdrop-blur-md hover:bg-white/10 transition-colors text-white/80 hover:text-white">
-          {showNames ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5 text-white/40" />}
+        <button 
+          onClick={() => setShowNames(!showNames)} 
+          className="p-2.5 md:p-3 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 transition-colors text-white/90"
+        >
+          {showNames ? <Eye className="w-4 h-4 md:w-5 md:h-5" /> : <EyeOff className="w-4 h-4 md:w-5 md:h-5 text-white/40" />}
         </button>
-        <button onClick={() => setSoundEnabled(!soundEnabled)} className="p-3 rounded-full bg-white/5 backdrop-blur-md hover:bg-white/10 transition-colors text-white/80 hover:text-white hidden md:block">
-          {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5 text-white/40" />}
+        <button 
+          onClick={() => setSoundEnabled(!soundEnabled)} 
+          className="p-2.5 md:p-3 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 transition-colors text-white/90 hidden md:block"
+        >
+          {soundEnabled ? <Volume2 className="w-4 h-4 md:w-5 md:h-5" /> : <VolumeX className="w-4 h-4 md:w-5 md:h-5 text-white/40" />}
         </button>
       </div>
 
-      {/* Share to Story Button (Bottom Center) */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50 controls-layer">
-        <button 
-          onClick={async (e) => {
-            e.stopPropagation();
-            setIsPaused(true);
-            setIsSharingSlide(true);
-            await shareElementAsImage('slide-capture-zone');
-            setIsSharingSlide(false);
-            setIsPaused(false);
-          }} 
-          className="px-5 py-2.5 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 transition-colors text-white/80 hover:text-white flex items-center gap-2 text-sm font-medium border border-white/5"
-        >
-          {isSharingSlide ? <span className="animate-pulse">Capturing...</span> : (
-            <>
-              <Share className="w-4 h-4" /> Share to Story
-            </>
-          )}
-        </button>
-      </div>
+      {/* Share to Story Button (Bottom Center) - Only on regular slides */}
+      {!isFinalSlide && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 controls-layer">
+          <button 
+            onClick={async (e) => {
+              e.stopPropagation();
+              setIsPaused(true);
+              setIsSharingSlide(true);
+              await shareElementAsImage('slide-capture-zone');
+              setIsSharingSlide(false);
+              setIsPaused(false);
+            }} 
+            className="px-5 py-2.5 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 transition-colors text-white/90 flex items-center gap-2 text-xs md:text-sm font-semibold border border-white/10 shadow-lg"
+          >
+            {isSharingSlide ? <span className="animate-pulse">Capturing...</span> : (
+              <>
+                <Share className="w-3.5 h-3.5" /> Share to Story
+              </>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* Slide Content Area */}
       <div 
@@ -355,11 +389,12 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
               animate={{ opacity: 1, x: 0, filter: 'blur(0px)', scale: 1 }}
               exit={{ opacity: 0, x: direction * -50, filter: 'blur(5px)', scale: 1.1 }}
               transition={{ duration: 0.4, ease: [0.25, 1, 0.5, 1] }}
-              className={`w-full h-full flex flex-col items-center justify-center p-6 pointer-events-auto transition-transform duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] ${isPaused && !isSharingSlide ? 'scale-[0.98] opacity-90' : 'scale-100'}`}
-              drag="x"
+              className={`w-full h-full flex flex-col items-center justify-center p-4 md:p-6 pointer-events-auto transition-transform duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] ${isPaused && !isSharingSlide && !isFinalSlide ? 'scale-[0.98] opacity-90' : 'scale-100'}`}
+              drag={isFinalSlide ? false : "x"}
               dragConstraints={{ left: 0, right: 0 }}
               dragElastic={0.2}
               onDragEnd={(_, { offset, velocity }) => {
+                if (isFinalSlide) return;
                 const swipe = offset.x;
                 if (swipe < -50 || velocity.x < -500) nextSlide();
                 else if (swipe > 50 || velocity.x > 500) prevSlide();
@@ -367,11 +402,20 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
             >
               {/* Slide Midground Parallax */}
               <motion.div 
-                className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                className="w-full h-full flex items-center justify-center pointer-events-none"
                 animate={{ x: mousePos.x * 0.5, y: mousePos.y * 0.5 }}
                 transition={{ type: 'spring', damping: 40, stiffness: 100 }}
               >
-                <CurrentSlideComponent stats={stats} showNames={showNames} onExplore={onExplore} onShareClick={() => setShowShareMenu(true)} />
+                <div className="w-full h-full flex items-center justify-center pointer-events-auto">
+                  <CurrentSlideComponent 
+                    stats={stats} 
+                    showNames={showNames} 
+                    onExplore={onExplore} 
+                    onShareClick={() => setShowShareMenu(true)} 
+                    onDownloadVideoClick={() => setShowVideoModal(true)}
+                    onReplay={replayWrapped}
+                  />
+                </div>
               </motion.div>
             </motion.div>
           </AnimatePresence>
@@ -382,58 +426,55 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
 };
 
 // --- SLIDE COMPONENTS --- //
-// Every slide follows the "Less UI, More Experience" principle. High contrast typography. Staged reveals.
 
 const SlideIntro = () => (
-  <div className="text-center">
+  <div className="text-center px-4">
     <motion.h1 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-      className="text-6xl md:text-[8rem] font-bold tracking-tighter mb-4 leading-none"
+      className="text-5xl md:text-[7.5rem] font-black tracking-tighter mb-4 leading-none text-white"
     >
       Your Instagram, <br/> wrapped.
     </motion.h1>
     <motion.p 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ delay: 1, duration: 1 }}
-      className="text-3xl font-bold text-white/30 tracking-widest"
+      transition={{ delay: 0.8, duration: 1 }}
+      className="text-2xl md:text-3xl font-extrabold text-white/40 tracking-widest uppercase"
     >
-      2026
+      2026 Edition
     </motion.p>
   </div>
 );
 
 const SlideTotal = ({ stats }: { stats: WrappedStats }) => (
-  <div className="text-center">
+  <div className="text-center px-4">
     <motion.p 
       initial={{ opacity: 0 }} 
       animate={{ opacity: 1 }} 
-      className="text-xl md:text-3xl text-white/40 font-medium mb-8"
+      className="text-lg md:text-2xl text-white/50 font-medium mb-6"
     >
       First things first...
     </motion.p>
     <motion.div 
       initial={{ y: 20, opacity: 0, filter: 'blur(10px)' }} 
       animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }} 
-      transition={{ delay: 1, duration: 1.5, ease: [0.16, 1, 0.3, 1] }} 
-      className="text-[6rem] md:text-[12rem] font-bold leading-none tracking-tighter drop-shadow-2xl mb-4"
+      transition={{ delay: 0.5, duration: 1.2, ease: [0.16, 1, 0.3, 1] }} 
+      className="text-[5.5rem] md:text-[10rem] font-black leading-none tracking-tighter drop-shadow-2xl mb-4 text-white"
     >
       {stats.totalMessages.toLocaleString()}
     </motion.div>
     <motion.p 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ delay: 1.5, duration: 1 }}
-      className="text-3xl md:text-5xl font-medium text-white/60 tracking-tight"
+      transition={{ delay: 1, duration: 0.8 }}
+      className="text-2xl md:text-4xl font-bold text-white/70 tracking-tight"
     >
       messages exchanged
     </motion.p>
   </div>
 );
-
-
 
 const formatHour = (h: number) => {
   if (h === 0) return '12 AM';
@@ -442,21 +483,20 @@ const formatHour = (h: number) => {
 };
 
 const SlidePeak = ({ stats }: { stats: WrappedStats }) => (
-  <div className="text-center flex flex-col items-center">
-    <p className="text-2xl text-white/40 font-medium mb-16">When you were online</p>
+  <div className="text-center flex flex-col items-center px-4">
+    <p className="text-xs md:text-sm font-bold tracking-[0.25em] text-white/50 uppercase mb-8">Peak Activity</p>
     
-    <div className="relative w-80 h-80 md:w-96 md:h-96 flex items-center justify-center">
-      {/* Abstract Clock/Time visualization */}
-      <svg className="absolute inset-0 w-full h-full opacity-20" viewBox="0 0 100 100">
-        <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="1 4" />
+    <div className="relative w-72 h-72 md:w-88 md:h-88 flex items-center justify-center">
+      <svg className="absolute inset-0 w-full h-full opacity-25" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="2 4" />
       </svg>
       
       <div className="z-10 flex flex-col items-center">
         <motion.div 
-          initial={{ y: 20, opacity: 0 }} 
+          initial={{ y: 15, opacity: 0 }} 
           animate={{ y: 0, opacity: 1 }} 
-          transition={{ delay: 0.5, duration: 1 }} 
-          className="text-4xl md:text-5xl font-bold text-white/60 mb-2"
+          transition={{ delay: 0.3, duration: 0.8 }} 
+          className="text-3xl md:text-4xl font-black text-white/70 mb-1"
         >
           {stats.peakDayOfWeek}s
         </motion.div>
@@ -464,8 +504,8 @@ const SlidePeak = ({ stats }: { stats: WrappedStats }) => (
         <motion.div 
           initial={{ scale: 0.8, opacity: 0 }} 
           animate={{ scale: 1, opacity: 1 }} 
-          transition={{ delay: 1, duration: 1.5, ease: [0.16, 1, 0.3, 1] }} 
-          className="text-7xl md:text-9xl font-bold tracking-tighter"
+          transition={{ delay: 0.6, duration: 1, ease: [0.16, 1, 0.3, 1] }} 
+          className="text-6xl md:text-8xl font-black tracking-tighter text-white"
         >
           {formatHour(stats.peakHour)}
         </motion.div>
@@ -475,111 +515,109 @@ const SlidePeak = ({ stats }: { stats: WrappedStats }) => (
 );
 
 const SlideDensity = ({ stats, showNames }: any) => (
-  <div className="text-center max-w-4xl px-8">
-    <p className="text-2xl text-white/40 font-medium mb-16">The Rapid-Fire Session</p>
+  <div className="text-center max-w-xl px-6">
+    <p className="text-xs md:text-sm font-bold tracking-[0.25em] text-white/50 uppercase mb-8">Rapid-Fire Session</p>
     <motion.h2 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.5 }}
-      className="text-7xl md:text-9xl font-bold tracking-tighter mb-8 leading-none"
+      transition={{ delay: 0.3 }}
+      className="text-6xl md:text-8xl font-black tracking-tighter mb-4 leading-none text-white"
     >
       {stats.fastestDensity.messages} msgs
     </motion.h2>
     <motion.p 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ delay: 1.2 }}
-      className="text-4xl md:text-5xl font-medium text-white/60 mb-12 tracking-tight"
+      transition={{ delay: 0.7 }}
+      className="text-2xl md:text-4xl font-bold text-white/70 mb-8 tracking-tight"
     >
       in under {stats.fastestDensity.minutes} minutes
     </motion.p>
     <motion.p 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ delay: 2 }}
-      className="text-3xl font-medium text-white/30"
+      transition={{ delay: 1.1 }}
+      className="text-lg md:text-2xl font-semibold text-white/40"
     >
-      with <span className="text-white">{showNames ? stats.fastestDensity.name : "Someone"}</span>
+      with <span className="text-white font-bold">{showNames ? stats.fastestDensity.name : "Someone"}</span>
     </motion.p>
   </div>
 );
 
-
-
 const SlideMidnight = ({ stats, showNames }: any) => (
-  <div className="text-center">
-    <p className="text-2xl text-white/40 font-medium mb-16">After Hours</p>
+  <div className="text-center px-6 max-w-xl">
+    <p className="text-xs md:text-sm font-bold tracking-[0.25em] text-white/50 uppercase mb-6">After Hours</p>
     <motion.h2 
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
-      className="text-4xl md:text-5xl font-medium tracking-tight mb-8 text-white/60"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
+      className="text-2xl md:text-3xl font-bold tracking-tight mb-6 text-white/70"
     >
-      Your favorite late-night distraction:
+      Your late-night distraction:
     </motion.h2>
     <motion.div 
       initial={{ y: 20, opacity: 0, filter: 'blur(10px)' }} 
       animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }} 
-      transition={{ delay: 1.5, duration: 1.5, ease: [0.16, 1, 0.3, 1] }} 
-      className="text-[5rem] md:text-[8rem] font-bold tracking-tighter leading-none"
+      transition={{ delay: 0.8, duration: 1.2, ease: [0.16, 1, 0.3, 1] }} 
+      className="text-4xl md:text-6xl font-black tracking-tighter leading-none text-white"
     >
       {showNames ? stats.midnightConnection.name : "Someone"}
     </motion.div>
   </div>
 );
 
-
-
-// Vertical Cascade for Top 5
 const SlideTop5 = ({ stats, showNames }: any) => (
-  <div className="w-full max-w-3xl px-8 flex flex-col h-full justify-center">
-    <h2 className="text-4xl md:text-6xl font-bold mb-16 tracking-tighter">Your Inner Circle.</h2>
-    <div className="space-y-8">
-      {stats.topConnections.slice(1, 5).reverse().map((conn: any, i: number) => {
-        const rank = 5 - i;
-        return (
-          <motion.div 
-            key={i} 
-            initial={{ y: 20, opacity: 0 }} 
-            animate={{ y: 0, opacity: 1 }} 
-            transition={{ delay: 0.5 + (i * 0.4), duration: 0.8, ease: [0.16, 1, 0.3, 1] }} 
-            className="flex items-baseline gap-6 border-b border-white/5 pb-6"
-          >
-            <div className="text-2xl font-bold text-white/20">0{rank}</div>
-            <div className="text-3xl md:text-5xl font-bold tracking-tight truncate flex-1">
-              {showNames ? conn.name : `Connection ${rank}`}
-            </div>
-            <div className="text-xl md:text-2xl font-medium text-white/40">
-              {conn.messageCount.toLocaleString()}
-            </div>
-          </motion.div>
-        );
-      })}
+  <div className="w-full max-w-lg px-4 md:px-8 flex flex-col h-full justify-center py-8 mx-auto">
+    <div className="text-center mb-8">
+      <p className="text-xs md:text-sm font-bold tracking-[0.25em] text-white/50 uppercase mb-1">Inner Circle</p>
+      <h2 className="text-3xl md:text-5xl font-black tracking-tighter text-white">Your Top Friends</h2>
+    </div>
+
+    <div className="space-y-3">
+      {stats.topConnections.slice(0, 5).map((conn: any, i: number) => (
+        <motion.div 
+          key={conn.name} 
+          initial={{ y: 15, opacity: 0 }} 
+          animate={{ y: 0, opacity: 1 }} 
+          transition={{ delay: 0.2 + (i * 0.08), duration: 0.6 }} 
+          className="flex items-center justify-between p-3.5 md:p-4 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-md"
+        >
+          <div className="flex items-center gap-3 md:gap-4 truncate mr-2">
+            <span className="text-lg md:text-xl font-black text-white/30">0{i + 1}</span>
+            <span className="text-base md:text-xl font-bold tracking-tight truncate text-white">
+              {showNames ? conn.name : `Friend ${i + 1}`}
+            </span>
+          </div>
+          <span className="text-xs md:text-sm font-semibold text-white/70 whitespace-nowrap bg-white/10 px-3 py-1 rounded-full">
+            {conn.messageCount.toLocaleString()} msgs
+          </span>
+        </motion.div>
+      ))}
     </div>
   </div>
 );
 
 const SlideTop1 = ({ stats, showNames }: any) => (
-  <div className="text-center w-full px-4">
+  <div className="text-center w-full px-4 max-w-xl mx-auto flex flex-col justify-center h-full py-8">
     <motion.p 
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
-      className="text-2xl text-white/40 font-medium mb-16"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
+      className="text-xs md:text-sm font-bold tracking-[0.25em] text-white/50 uppercase mb-4"
     >
-      But your #1 was...
+      The Undisputed #1
     </motion.p>
     
     <motion.div 
-      initial={{ scale: 0.9, opacity: 0, filter: 'blur(20px)' }} 
+      initial={{ scale: 0.85, opacity: 0, filter: 'blur(15px)' }} 
       animate={{ scale: 1, opacity: 1, filter: 'blur(0px)' }} 
-      transition={{ delay: 2, duration: 1.5, ease: [0.16, 1, 0.3, 1] }} 
-      className="relative"
+      transition={{ delay: 0.8, duration: 1.2, ease: [0.16, 1, 0.3, 1] }} 
+      className="relative mb-6"
     >
-      <h2 className="text-[5rem] md:text-[10rem] font-bold tracking-tighter mb-8 leading-none drop-shadow-2xl max-w-full break-words">
-        {showNames ? stats.topConnections[0]?.name : "Someone"}
+      <h2 className="text-5xl md:text-7xl font-black tracking-tighter text-white break-words">
+        {showNames ? (stats.topConnections[0]?.name || "Someone") : "Your Best Friend"}
       </h2>
     </motion.div>
 
     <motion.p 
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 3.5 }}
-      className="text-3xl md:text-5xl text-white/60 font-medium tracking-tight"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.6 }}
+      className="text-2xl md:text-4xl text-white/80 font-extrabold tracking-tight"
     >
       {stats.topConnections[0]?.messageCount.toLocaleString()} messages
     </motion.p>
@@ -587,47 +625,114 @@ const SlideTop1 = ({ stats, showNames }: any) => (
 );
 
 const SlideArchetype = ({ stats }: any) => (
-  <div className="text-center max-w-4xl px-8">
-    <p className="text-2xl text-white/40 font-medium mb-16">Your 2026 Archetype</p>
-    <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5, duration: 1, ease: [0.16, 1, 0.3, 1] }}>
-      <h2 className="text-[4rem] md:text-[7rem] font-bold tracking-tighter leading-none mb-12 drop-shadow-2xl">
+  <div className="text-center max-w-xl px-6 flex flex-col justify-center h-full mx-auto py-8">
+    <p className="text-xs md:text-sm font-bold tracking-[0.25em] text-white/50 uppercase mb-4">Your 2026 Personality</p>
+    <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3, duration: 1, ease: [0.16, 1, 0.3, 1] }}>
+      <h2 className="text-4xl md:text-6xl font-black tracking-tighter leading-tight mb-6 drop-shadow-2xl text-white">
         {stats.archetype.title}
       </h2>
-      <p className="text-2xl md:text-4xl text-white/50 leading-snug font-medium">
+      <p className="text-lg md:text-2xl text-white/60 leading-relaxed font-medium">
         {stats.archetype.description}
       </p>
     </motion.div>
   </div>
 );
 
-const SlideShare = ({ stats, showNames, onExplore, onShareClick }: any) => (
-  <div className="w-full h-full flex flex-col items-center justify-center px-4 py-12 overflow-y-auto hide-scrollbar controls-layer">
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-      className="text-center mb-12 shrink-0 mt-8"
-    >
-      <h2 className="text-4xl md:text-6xl font-bold tracking-tighter mb-4">Your Wrapped is ready.</h2>
-    </motion.div>
+// --- REDESIGNED FINAL WRAPPED PAGE --- //
+const SlideShare = ({ stats, showNames, onExplore, onShareClick, onDownloadVideoClick, onReplay }: SlideProps) => {
+  return (
+    <div className="w-full h-full flex flex-col items-center justify-between px-4 pt-14 pb-6 md:py-12 overflow-y-auto hide-scrollbar controls-layer max-w-md mx-auto">
+      {/* 1. Header (Fades in first) */}
+      <motion.div 
+        initial={{ opacity: 0, y: -15 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="text-center mt-2 md:mt-4 shrink-0"
+      >
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-[10px] md:text-xs font-bold tracking-widest text-white/80 uppercase mb-2">
+          <Sparkles className="w-3 h-3 text-insta-yellow" /> Complete
+        </div>
+        <h2 className="text-2xl md:text-4xl font-black tracking-tighter text-white uppercase">
+          YOUR WRAPPED IS READY.
+        </h2>
+        <p className="text-xs md:text-sm font-medium text-white/50 mt-0.5">
+          That was your Instagram, wrapped.
+        </p>
+      </motion.div>
 
-    <motion.div 
-      initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-      className="shrink-0 mb-12"
-    >
-      <ShareCard stats={stats} showNames={showNames} />
-    </motion.div>
-    
-    <motion.div 
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
-      className="flex flex-col md:flex-row gap-4 shrink-0 mb-8 w-full max-w-2xl justify-center"
-    >
-      <button onClick={onShareClick} className="px-8 py-5 bg-white text-black font-bold text-lg rounded-full active:scale-95 transition-transform flex items-center justify-center gap-3 spatial-shadow">
-        <Share className="w-6 h-6" /> Share Link
-      </button>
-      <button onClick={onExplore} className="px-8 py-5 bg-white/10 text-white font-bold text-lg rounded-full active:scale-95 transition-transform hover:bg-white/20 flex items-center justify-center gap-3">
-        <LayoutGrid className="w-6 h-6" /> Explore Dashboard
-      </button>
-    </motion.div>
-  </div>
-);
+      {/* 2. Visual Centerpiece Preview Card (Smooth scale & glow entrance) */}
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.92, y: 15 }} 
+        animate={{ opacity: 1, scale: 1, y: 0 }} 
+        transition={{ delay: 0.25, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        className="relative my-auto shrink-0 group cursor-pointer"
+        onClick={onDownloadVideoClick}
+      >
+        <div className="relative rounded-3xl transition-transform duration-300 group-hover:scale-[1.02] shadow-[0_15px_45px_rgba(0,0,0,0.6)]">
+          <ShareCard stats={stats} showNames={showNames} />
+
+          {/* Hover / Touch Action Overlay */}
+          <div className="absolute inset-0 bg-black/30 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 backdrop-blur-[2px]">
+            <div className="p-4 rounded-full bg-white text-black shadow-2xl scale-95 group-hover:scale-100 transition-transform">
+              <Film className="w-7 h-7 fill-black" />
+            </div>
+            <span className="text-xs font-black tracking-wider uppercase text-white bg-black/60 px-3 py-1 rounded-full">
+              Click to Export Video
+            </span>
+          </div>
+        </div>
+      </motion.div>
+      
+      {/* 3. Action Hierarchy (Download > Share > Replay/Explore) */}
+      <div className="w-full flex flex-col gap-2.5 shrink-0 mb-2">
+        {/* PRIMARY CTA: Download Video */}
+        <motion.button 
+          initial={{ opacity: 0, y: 15 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ delay: 0.45, duration: 0.6 }}
+          onClick={onDownloadVideoClick} 
+          className="w-full py-3.5 md:py-4 px-6 bg-gradient-to-r from-insta-pink via-red-500 to-insta-orange text-white font-black text-sm md:text-base rounded-full active:scale-95 transition-all flex items-center justify-center gap-2.5 shadow-[0_8px_30px_rgba(225,48,108,0.45)] hover:shadow-[0_8px_40px_rgba(225,48,108,0.65)]"
+        >
+          <Film className="w-4 h-4 md:w-5 md:h-5" /> Download Wrapped ??
+        </motion.button>
+
+        {/* SECONDARY CTA: Share Link */}
+        <motion.button 
+          initial={{ opacity: 0, y: 15 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ delay: 0.6, duration: 0.6 }}
+          onClick={onShareClick} 
+          className="w-full py-3 md:py-3.5 px-6 bg-white/10 hover:bg-white/15 border border-white/15 text-white font-bold text-xs md:text-sm rounded-full active:scale-95 transition-all flex items-center justify-center gap-2 backdrop-blur-md"
+        >
+          <Share className="w-4 h-4" /> Share Wrapped ?
+        </motion.button>
+
+        {/* TERTIARY ACTIONS: Subtle Row */}
+        <motion.div 
+          initial={{ opacity: 0 }} 
+          animate={{ opacity: 1 }} 
+          transition={{ delay: 0.75, duration: 0.6 }}
+          className="flex items-center justify-center gap-5 pt-1 text-xs text-white/50 font-semibold"
+        >
+          <button 
+            onClick={onReplay}
+            className="hover:text-white transition-colors flex items-center gap-1.5 py-1 px-2"
+          >
+            <RotateCcw className="w-3.5 h-3.5" /> Replay
+          </button>
+
+          <span className="text-white/20">•</span>
+
+          <button 
+            onClick={onExplore}
+            className="hover:text-white transition-colors flex items-center gap-1.5 py-1 px-2"
+          >
+            <LayoutGrid className="w-3.5 h-3.5" /> Explore Data
+          </button>
+        </motion.div>
+      </div>
+    </div>
+  );
+};
 
 export default WrappedStory;
