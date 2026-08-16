@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import type { WrappedStats } from '../types/instagram';
+import { Calendar, Flame, Clock, Sparkles } from 'lucide-react';
 
 export const formatMonthTitle = (monthStr: string): string => {
   if (!monthStr) return '';
@@ -21,22 +22,24 @@ export const SlideSocialCircle = ({ stats, showNames }: { stats: WrappedStats, s
   return (
     <div className="w-full px-4 flex flex-col justify-center items-center h-full max-w-lg mx-auto py-6 overflow-hidden">
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-2">
-        <p className="text-xs md:text-sm font-bold tracking-[0.25em] text-white/50 uppercase mb-1">Gravity & Orbit</p>
+        <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-white/10 border border-white/10 text-[10px] md:text-xs font-bold tracking-widest text-white/80 uppercase mb-1.5 backdrop-blur-md">
+          <Sparkles className="w-3 h-3 text-insta-yellow" /> Gravitational Pull
+        </div>
         <h2 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tighter text-white">Your Social Circle</h2>
       </motion.div>
       
-      {/* Visual Solar System Graph - Responsive Radius */}
-      <div className="relative w-full max-w-[270px] sm:max-w-[320px] h-56 sm:h-64 my-2 sm:my-4 mx-auto flex items-center justify-center">
-        {/* Orbital rings */}
-        <div className="absolute w-[180px] sm:w-[220px] h-[180px] sm:h-[220px] rounded-full border border-white/10 pointer-events-none" />
-        <div className="absolute w-[240px] sm:w-[290px] h-[240px] sm:h-[290px] rounded-full border border-dashed border-white/5 pointer-events-none" />
+      {/* Visual Solar System Graph */}
+      <div className="relative w-full max-w-[270px] sm:max-w-[320px] h-56 sm:h-64 my-2 sm:my-3 mx-auto flex items-center justify-center">
+        {/* Orbital rings with ambient glow */}
+        <div className="absolute w-[180px] sm:w-[210px] h-[180px] sm:h-[210px] rounded-full border border-white/15 pointer-events-none shadow-[0_0_20px_rgba(255,255,255,0.05)]" />
+        <div className="absolute w-[240px] sm:w-[280px] h-[240px] sm:h-[280px] rounded-full border border-dashed border-white/10 pointer-events-none" />
 
         {/* Center Node (YOU) */}
         <motion.div 
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: 'spring', damping: 12 }}
-          className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white text-black font-black flex items-center justify-center text-xs sm:text-sm shadow-[0_0_25px_rgba(255,255,255,0.7)] z-20"
+          className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-tr from-white via-white/90 to-white/70 text-black font-black flex items-center justify-center text-xs sm:text-sm shadow-[0_0_30px_rgba(255,255,255,0.8)] z-20 ring-4 ring-white/20"
         >
           YOU
         </motion.div>
@@ -44,10 +47,10 @@ export const SlideSocialCircle = ({ stats, showNames }: { stats: WrappedStats, s
         {/* Orbiting Satellite Nodes */}
         {top.map((conn, i) => {
           const ratio = conn.messageCount / maxMessages;
-          const nodeSize = 30 + ratio * 20; 
+          const nodeSize = 32 + ratio * 20; 
           const angle = (i / top.length) * (2 * Math.PI) - (Math.PI / 2);
           const baseR = 90;
-          const r = baseR + (i % 2) * 32;
+          const r = baseR + (i % 2) * 30;
           const x = Math.cos(angle) * r;
           const y = Math.sin(angle) * r;
 
@@ -56,7 +59,7 @@ export const SlideSocialCircle = ({ stats, showNames }: { stats: WrappedStats, s
               key={conn.name}
               initial={{ opacity: 0, scale: 0 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3 + (i * 0.08), type: 'spring' }}
+              transition={{ delay: 0.25 + (i * 0.07), type: 'spring' }}
               className="absolute z-10 flex flex-col items-center pointer-events-none"
               style={{
                 transform: `translate(${x}px, ${y}px)`,
@@ -64,15 +67,15 @@ export const SlideSocialCircle = ({ stats, showNames }: { stats: WrappedStats, s
             >
               <div 
                 style={{ width: `${nodeSize}px`, height: `${nodeSize}px` }}
-                className="rounded-full bg-white/20 border border-white/40 flex items-center justify-center backdrop-blur-md shadow-lg"
+                className="rounded-full bg-gradient-to-tr from-white/30 to-white/10 border border-white/40 flex items-center justify-center backdrop-blur-md shadow-[0_4px_15px_rgba(0,0,0,0.4)]"
               >
                 <div 
                   style={{ width: `${nodeSize * 0.45}px`, height: `${nodeSize * 0.45}px` }}
-                  className="rounded-full bg-white/80"
+                  className="rounded-full bg-white/90 shadow-sm"
                 />
               </div>
-              {ratio > 0.25 && (
-                <span className="text-[9px] sm:text-[10px] font-black text-white px-1.5 py-0.5 rounded bg-black/60 shadow mt-0.5 max-w-[65px] sm:max-w-[80px] truncate block text-center">
+              {ratio > 0.2 && (
+                <span className="text-[9px] sm:text-[10px] font-black text-white px-1.5 py-0.5 rounded-full bg-black/70 border border-white/10 shadow mt-1 max-w-[65px] sm:max-w-[80px] truncate block text-center backdrop-blur-sm">
                   {showNames ? conn.name.split(' ')[0] : 'HIDDEN'}
                 </span>
               )}
@@ -84,14 +87,14 @@ export const SlideSocialCircle = ({ stats, showNames }: { stats: WrappedStats, s
       <motion.div 
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.8 }}
+        transition={{ delay: 0.7 }}
         className="text-center mt-2"
       >
-        <div className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tighter mb-0.5 text-white">
+        <div className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tighter mb-0.5 text-white drop-shadow-md">
           {stats.uniqueContacts.toLocaleString()}
         </div>
         <div className="text-xs sm:text-sm md:text-xl text-white/60 font-medium">
-          unique people in your world
+          unique people in your universe
         </div>
       </motion.div>
     </div>
@@ -106,7 +109,9 @@ export const SlideCalendar = ({ stats }: { stats: WrappedStats }) => {
   return (
     <div className="w-full px-4 md:px-8 flex flex-col justify-center h-full max-w-xl mx-auto py-6">
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-4 sm:mb-6">
-        <p className="text-xs md:text-sm font-bold tracking-[0.25em] text-white/50 uppercase mb-1">Activity Rhythm</p>
+        <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-white/10 border border-white/10 text-[10px] md:text-xs font-bold tracking-widest text-white/80 uppercase mb-1.5 backdrop-blur-md">
+          <Calendar className="w-3 h-3 text-insta-pink" /> 365 Days of Chats
+        </div>
         <h2 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tighter text-white">
           Your Social Calendar
         </h2>
@@ -114,40 +119,40 @@ export const SlideCalendar = ({ stats }: { stats: WrappedStats }) => {
       
       <div className="text-center mb-4 sm:mb-6">
         <motion.div initial={{ y: 15, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="flex flex-wrap items-baseline justify-center gap-1.5 sm:gap-3">
-          <span className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tighter leading-tight text-white">
+          <span className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tighter leading-tight text-white drop-shadow-md">
             {stats.activeDaysCount}
           </span>
           <span className="text-white/50 text-xl sm:text-2xl md:text-4xl font-bold">active days</span>
         </motion.div>
         
         {mostActive && (
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="text-xs sm:text-sm md:text-base font-medium text-white/70 mt-1.5 truncate max-w-full px-2">
-            Busiest Day: <span className="text-white font-bold">{mostActive.date}</span> ({mostActive.total} msgs)
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="text-xs sm:text-sm md:text-base font-medium text-white/80 mt-1.5 truncate max-w-full px-2">
+            Peak Intensity: <span className="text-white font-black bg-white/15 px-2 py-0.5 rounded-full">{mostActive.date}</span> ({mostActive.total.toLocaleString()} msgs)
           </motion.p>
         )}
       </div>
 
-      {/* Heatmap Grid - Responsive Fit */}
+      {/* Heatmap Grid */}
       <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
-        className="w-full max-w-[340px] sm:max-w-md mx-auto grid grid-cols-12 gap-1 sm:gap-1.5 justify-center p-2.5 sm:p-3 bg-black/20 rounded-2xl border border-white/10"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.4 }}
+        className="w-full max-w-[340px] sm:max-w-md mx-auto grid grid-cols-12 gap-1 sm:gap-1.5 justify-center p-3 sm:p-4 bg-black/30 rounded-3xl border border-white/10 backdrop-blur-md shadow-2xl"
       >
         {cal.slice(-108).map((day, i) => {
           const intensity = Math.min(day.total / (mostActive.total || 1), 1);
           let bgClass = "bg-white/5";
-          if (intensity > 0.05) bgClass = "bg-white/25";
-          if (intensity > 0.3) bgClass = "bg-white/50";
-          if (intensity > 0.6) bgClass = "bg-white/80";
-          if (intensity > 0.85) bgClass = "bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)]";
+          if (intensity > 0.05) bgClass = "bg-white/20";
+          if (intensity > 0.25) bgClass = "bg-insta-pink/60";
+          if (intensity > 0.55) bgClass = "bg-insta-pink/90 shadow-[0_0_8px_rgba(225,48,108,0.5)]";
+          if (intensity > 0.85) bgClass = "bg-white shadow-[0_0_12px_rgba(255,255,255,0.9)]";
           
           return (
             <motion.div 
               key={day.date}
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ delay: 0.2 + (i * 0.003) }}
+              transition={{ delay: 0.15 + (i * 0.003) }}
               className={`aspect-square w-full rounded-sm ${bgClass}`}
               title={`${day.date}: ${day.total} messages`}
             />
@@ -155,7 +160,7 @@ export const SlideCalendar = ({ stats }: { stats: WrappedStats }) => {
         })}
       </motion.div>
       <p className="text-center text-white/40 text-[10px] sm:text-[11px] mt-3 uppercase tracking-widest font-semibold">
-        Recent Daily Intensity
+        Recent Activity Intensity
       </p>
     </div>
   );
@@ -167,19 +172,17 @@ export const SlideStreak = ({ stats, showNames }: { stats: WrappedStats, showNam
   
   return (
     <div className="text-center w-full px-4 flex flex-col justify-center h-full max-w-xl mx-auto py-6">
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="text-xs md:text-sm font-bold tracking-[0.25em] text-white/50 uppercase mb-2"
-      >
-        Unbroken Connection
-      </motion.p>
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+        <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-insta-orange/20 border border-insta-orange/30 text-[10px] md:text-xs font-bold tracking-widest text-insta-orange uppercase mb-2 backdrop-blur-md">
+          <Flame className="w-3.5 h-3.5" /> Unbroken Connection
+        </div>
+      </motion.div>
       
       <motion.div 
         initial={{ y: 20, opacity: 0, filter: 'blur(10px)' }} 
         animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }} 
         transition={{ delay: 0.2, type: 'spring', damping: 15 }}
-        className="text-5xl sm:text-7xl md:text-9xl font-black leading-none tracking-tighter drop-shadow-2xl my-2 text-white break-all"
+        className="text-6xl sm:text-7xl md:text-9xl font-black leading-none tracking-tighter drop-shadow-[0_10px_35px_rgba(245,96,64,0.4)] my-2 text-white break-all"
       >
         {streak.days}
       </motion.div>
@@ -187,8 +190,8 @@ export const SlideStreak = ({ stats, showNames }: { stats: WrappedStats, showNam
       <motion.h2 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
-        className="text-xl sm:text-2xl md:text-4xl font-bold tracking-tight mb-2 text-white/90"
+        transition={{ delay: 0.45 }}
+        className="text-xl sm:text-2xl md:text-4xl font-black tracking-tight mb-2 text-white/90"
       >
         consecutive days chatting
       </motion.h2>
@@ -196,21 +199,22 @@ export const SlideStreak = ({ stats, showNames }: { stats: WrappedStats, showNam
       <motion.p 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.8 }}
-        className="text-base sm:text-lg md:text-2xl text-white/70 font-medium px-2 break-words"
+        transition={{ delay: 0.7 }}
+        className="text-base sm:text-lg md:text-2xl text-white/80 font-semibold px-2 break-words"
       >
-        with <span className="text-white font-bold">{showNames ? streak.name : 'Hidden'}</span>
+        with <span className="text-white font-black underline decoration-insta-orange decoration-2 underline-offset-4">{showNames ? streak.name : 'Hidden'}</span>
       </motion.p>
 
       {streak.startDate && streak.endDate && (
-        <motion.p
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1.1 }}
-          className="text-[11px] sm:text-xs md:text-sm text-white/40 mt-6 tracking-widest uppercase font-semibold break-words px-2"
+          transition={{ delay: 1 }}
+          className="mt-6 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/10 text-xs sm:text-sm text-white/60 font-semibold tracking-wider uppercase mx-auto"
         >
+          <Clock className="w-3.5 h-3.5 text-white/50" />
           {streak.startDate} → {streak.endDate}
-        </motion.p>
+        </motion.div>
       )}
     </div>
   );
@@ -228,7 +232,9 @@ export const SlideMonthly = ({ stats, showNames }: { stats: WrappedStats, showNa
         animate={{ opacity: 1, y: 0 }}
         className="text-center mb-4 sm:mb-6"
       >
-        <p className="text-xs md:text-sm font-bold tracking-[0.25em] text-white/50 uppercase mb-1">Timeline</p>
+        <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-white/10 border border-white/10 text-[10px] md:text-xs font-bold tracking-widest text-white/80 uppercase mb-1.5 backdrop-blur-md">
+          <Calendar className="w-3 h-3 text-insta-yellow" /> Monthly Evolutions
+        </div>
         <h2 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tighter text-white">
           Month by Month
         </h2>
@@ -245,19 +251,19 @@ export const SlideMonthly = ({ stats, showNames }: { stats: WrappedStats, showNa
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.08 }}
-              className="p-3 sm:p-4 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-md flex flex-col gap-1.5 sm:gap-2"
+              className="p-3 sm:p-4 rounded-2xl bg-white/[0.08] border border-white/15 backdrop-blur-xl shadow-lg flex flex-col gap-1.5 sm:gap-2 hover:bg-white/[0.12] transition-colors"
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="text-[11px] sm:text-xs md:text-sm font-black text-white/70 tracking-wider uppercase truncate">
+                <span className="text-[11px] sm:text-xs md:text-sm font-black text-insta-yellow tracking-wider uppercase truncate">
                   {formattedMonth}
                 </span>
-                <span className="text-[11px] sm:text-xs md:text-sm font-bold text-white/80 shrink-0">
+                <span className="text-[11px] sm:text-xs md:text-sm font-black text-white/90 bg-white/10 px-2.5 py-0.5 rounded-full shrink-0">
                   {m.count.toLocaleString()} msgs
                 </span>
               </div>
 
               <div className="flex items-baseline justify-between">
-                <span className="text-base sm:text-lg md:text-2xl font-bold tracking-tight text-white truncate max-w-full">
+                <span className="text-base sm:text-lg md:text-2xl font-black tracking-tight text-white truncate max-w-full">
                   {showNames ? m.name : 'Top Contact'}
                 </span>
               </div>
@@ -268,7 +274,7 @@ export const SlideMonthly = ({ stats, showNames }: { stats: WrappedStats, showNa
                   initial={{ width: 0 }} 
                   animate={{ width: `${ratio}%` }} 
                   transition={{ delay: 0.2 + i * 0.08, duration: 0.8, ease: "easeOut" }}
-                  className="h-full bg-gradient-to-r from-insta-yellow via-insta-pink to-insta-purple rounded-full" 
+                  className="h-full bg-gradient-to-r from-insta-yellow via-insta-pink to-insta-purple rounded-full shadow-[0_0_8px_rgba(225,48,108,0.6)]" 
                 />
               </div>
             </motion.div>
