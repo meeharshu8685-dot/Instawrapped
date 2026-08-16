@@ -27,7 +27,16 @@ export const calculateStats = (conversations: InstaConversation[], exportRange: 
   const activeDaysOfWeek = new Map<number, number>();
   const activeDays = new Set<string>();
 
-  // For complex streaks
+  // New Insight Trackers
+  const dailyActivity = new Map<string, { total: number; sent: number; received: number }>();
+  const monthlyConnections = new Map<string, Map<string, number>>();
+  
+  let globalMaxStreakDays = 0;
+  let globalMaxStreakName = '';
+  let globalMaxStreakStart = '';
+  let globalMaxStreakEnd = '';
+
+  // For old fast streaks
   let longestStreakCount = 0;
   let longestStreakName = '';
   
@@ -158,6 +167,7 @@ export const calculateStats = (conversations: InstaConversation[], exportRange: 
         const hour = date.getHours();
         const dayOfWeek = date.getDay(); // 0 = Sunday
         const dayKey = date.toISOString().split('T')[0];
+        const yearMonthKey = dayKey.substring(0, 7);
 
         activeMonths.set(monthKey, (activeMonths.get(monthKey) || 0) + 1);
         activeHours.set(hour, (activeHours.get(hour) || 0) + 1);
@@ -165,9 +175,27 @@ export const calculateStats = (conversations: InstaConversation[], exportRange: 
         activeDays.add(dayKey);
         convoActiveDays.add(dayKey);
 
+        // Daily Heatmap
+        if (!dailyActivity.has(dayKey)) {
+          dailyActivity.set(dayKey, { total: 0, sent: 0, received: 0 });
+        }
+        const daily = dailyActivity.get(dayKey)!;
+        daily.total++;
+        if (isSentByMe) daily.sent++;
+        else daily.received++;
+
         // Midnight
         if (hour >= 0 && hour < 4 && otherParticipant !== 'Group Chat') {
           midnightCounts.set(otherParticipant, (midnightCounts.get(otherParticipant) || 0) + 1);
+        }
+
+        // Monthly Top Connection Tracking
+        if (otherParticipant !== 'Group Chat') {
+          if (!monthlyConnections.has(yearMonthKey)) {
+            monthlyConnections.set(yearMonthKey, new Map());
+          }
+          const monthMap = monthlyConnections.get(yearMonthKey)!;
+          monthMap.set(otherParticipant, (monthMap.get(otherParticipant) || 0) + 1);
         }
 
         // Streak
@@ -211,6 +239,48 @@ export const calculateStats = (conversations: InstaConversation[], exportRange: 
             }
           }
         }
+      }
+    }
+
+    // Real Calendar Day Streak Calculation
+    if (otherParticipant && otherParticipant !== 'Group Chat') {
+      const sortedDays = Array.from(convoActiveDays).sort();
+      let currentDayStreak = 0;
+      let currentStreakStart = '';
+      let maxDayStreak = 0;
+      let maxStreakStart = '';
+      let maxStreakEnd = '';
+      
+      let prevDateMs = 0;
+      
+      for (const day of sortedDays) {
+        const dateMs = new Date(day).getTime();
+        if (prevDateMs === 0) {
+          currentDayStreak = 1;
+          currentStreakStart = day;
+        } else {
+          const diffDays = Math.round((dateMs - prevDateMs) / (1000 * 60 * 60 * 24));
+          if (diffDays === 1) {
+            currentDayStreak++;
+          } else if (diffDays > 1) {
+            currentDayStreak = 1;
+            currentStreakStart = day;
+          }
+        }
+        
+        if (currentDayStreak > maxDayStreak) {
+          maxDayStreak = currentDayStreak;
+          maxStreakStart = currentStreakStart;
+          maxStreakEnd = day;
+        }
+        prevDateMs = dateMs;
+      }
+
+      if (maxDayStreak > globalMaxStreakDays) {
+        globalMaxStreakDays = maxDayStreak;
+        globalMaxStreakName = otherParticipant;
+        globalMaxStreakStart = maxStreakStart;
+        globalMaxStreakEnd = maxStreakEnd;
       }
     }
 
@@ -309,6 +379,29 @@ export const calculateStats = (conversations: InstaConversation[], exportRange: 
     };
   }
 
+  // New Insights Processing
+  const allConnectionsArray = Array.from(connectionsMap.values());
+  const top5Messaged = [...allConnectionsArray].sort((a, b) => b.messageCount - a.messageCount).slice(0, 5);
+  const top5Consistent = [...allConnectionsArray].sort((a, b) => b.activeDays - a.activeDays).slice(0, 5);
+  const top5Media = [...allConnectionsArray].sort((a, b) => b.mediaShared - a.mediaShared).slice(0, 5);
+
+  const socialCalendar = Array.from(dailyActivity.entries()).map(([date, counts]) => ({
+    date,
+    ...counts
+  })).sort((a, b) => a.date.localeCompare(b.date));
+
+  const monthlyTopConnections = Array.from(monthlyConnections.entries()).map(([month, countsMap]) => {
+    let topName = '';
+    let topCount = 0;
+    countsMap.forEach((count, name) => {
+      if (count > topCount) {
+        topCount = count;
+        topName = name;
+      }
+    });
+    return { month, name: topName, count: topCount };
+  }).sort((a, b) => a.month.localeCompare(b.month));
+
   return {
     debug: {
       totalRawMessages,
@@ -335,6 +428,20 @@ export const calculateStats = (conversations: InstaConversation[], exportRange: 
     midnightConnection: topMidnightCount > 10 ? { name: topMidnightName, count: topMidnightCount } : null,
     consistentConnection: mostConsistent ? { name: mostConsistent.name, activeDays: mostConsistent.activeDays } : null,
     topConnections,
-    archetype: { title: archetypeTitle, description: archetypeDesc }
+    archetype: { title: archetypeTitle, description: archetypeDesc },
+    
+    // New Advanced Social Insights
+    socialCalendar,
+    longestDayStreak: globalMaxStreakDays > 2 ? {
+      name: globalMaxStreakName,
+      days: globalMaxStreakDays,
+      startDate: globalMaxStreakStart,
+      endDate: globalMaxStreakEnd
+    } : null,
+    top5Messaged,
+    top5Consistent,
+    top5Media,
+    monthlyTopConnections,
+    allConnections: allConnectionsArray
   };
 };

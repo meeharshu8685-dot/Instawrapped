@@ -97,6 +97,20 @@ export interface WrappedStats {
     activeDays: number;
   } | null;
 
+  // New Insights
+  socialCalendar: { date: string; total: number; sent: number; received: number }[];
+  longestDayStreak: {
+    name: string;
+    days: number;
+    startDate: string;
+    endDate: string;
+  } | null;
+  top5Messaged: ConnectionStat[];
+  top5Consistent: ConnectionStat[];
+  top5Media: ConnectionStat[];
+  monthlyTopConnections: { month: string; name: string; count: number }[];
+  allConnections: ConnectionStat[];
+
   topConnections: ConnectionStat[];
   
   archetype: {

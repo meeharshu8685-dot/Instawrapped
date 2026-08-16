@@ -6,27 +6,34 @@ import ShareCard from './ShareCard';
 import ShareMenu from './ShareMenu';
 import { LayoutGrid, Eye, EyeOff, Volume2, VolumeX, Share } from 'lucide-react';
 import { shareElementAsImage } from '../utils/shareUtils';
+import { SlideSocialCircle, SlideCalendar, SlideTopRankings, SlideStreak as SlideAdvancedStreak, SlideMonthly } from './WrappedStoryAdvancedSlides';
 
 const SLIDE_THEMES = [
   '#405DE6', // 0: Intro (Royal Blue)
   '#E1306C', // 1: Total (Vibrant Pink)
-  '#833AB4', // 2: Top People (Deep Purple)
-  '#009688', // 3: Late Night (Teal)
-  '#F56040', // 4: Ghost (Orange)
-  '#C13584', // 5: Blocked (Magenta)
-  '#FD1D1D', // 6: Emojis (Red)
-  '#5851DB', // 7: Archetype (Indigo)
-  '#0A0A0A'  // 8: End
+  '#833AB4', // 2: Social Circle (Deep Purple)
+  '#009688', // 3: Top 1 (Teal)
+  '#F56040', // 4: Top 5 (Orange)
+  '#C13584', // 5: Calendar (Magenta)
+  '#FD1D1D', // 6: Peak (Red)
+  '#5851DB', // 7: Streak (Indigo)
+  '#1E1E1E', // 8: Monthly (Dark)
+  '#2C3E50', // 9: Multiple Rankings (Slate)
+  '#405DE6', // 10: Archetype
+  '#0A0A0A'  // 11: Share/End
 ];
 
 const SLIDE_MARQUEES = [
   'INSTA WRAPPED 2026',
   'TOTAL MESSAGES SENT',
+  'YOUR SOCIAL CIRCLE',
+  'YOUR TOP CONNECTION',
   'TOP FRIENDS',
-  'LATE NIGHT CHATS',
-  'GHOSTED',
-  'BLOCKED',
-  'TOP EMOJIS',
+  'SOCIAL CALENDAR',
+  'PEAK ACTIVITY',
+  'LONGEST STREAK',
+  'MONTH BY MONTH',
+  'TOP RANKINGS',
   'YOUR ARCHETYPE',
   ''
 ];
@@ -89,20 +96,21 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
     const slides: Slide[] = [
       { id: 'intro', component: SlideIntro },
       { id: 'total', component: SlideTotal },
-      { id: 'ratio', component: SlideRatio },
-      { id: 'month', component: SlideMonth },
+      { id: 'social_circle', component: SlideSocialCircle },
+      { id: 'top1', component: SlideTop1 },
+      { id: 'top5', component: SlideTop5 },
+      { id: 'calendar', component: SlideCalendar },
       { id: 'peak', component: SlidePeak },
     ];
     
-    if (stats.fastestDensity) slides.push({ id: 'density', component: SlideDensity });
-    if (stats.longestStreak) slides.push({ id: 'streak', component: SlideStreak });
-    if (stats.comeback) slides.push({ id: 'comeback', component: SlideComeback });
-    if (stats.midnightConnection) slides.push({ id: 'midnight', component: SlideMidnight });
-    if (stats.consistentConnection) slides.push({ id: 'consistent', component: SlideConsistent });
-    if (stats.capabilities.media) slides.push({ id: 'media', component: SlideMedia });
+    if (stats.longestDayStreak) slides.push({ id: 'streak', component: SlideAdvancedStreak });
+    if (stats.monthlyTopConnections?.length > 0) slides.push({ id: 'monthly', component: SlideMonthly });
+    slides.push({ id: 'rankings', component: SlideTopRankings });
     
-    slides.push({ id: 'top5', component: SlideTop5 });
-    slides.push({ id: 'top1', component: SlideTop1 });
+    // Optional extra slides
+    if (stats.fastestDensity) slides.push({ id: 'density', component: SlideDensity });
+    if (stats.midnightConnection) slides.push({ id: 'midnight', component: SlideMidnight });
+    
     slides.push({ id: 'archetype', component: SlideArchetype });
     slides.push({ id: 'share', component: SlideShare });
     
@@ -425,70 +433,7 @@ const SlideTotal = ({ stats }: { stats: WrappedStats }) => (
   </div>
 );
 
-const SlideRatio = ({ stats }: { stats: WrappedStats }) => {
-  const sentPercent = (stats.messagesSent / stats.totalMessages) * 100;
-  const receivedPercent = (stats.messagesReceived / stats.totalMessages) * 100;
-  
-  return (
-    <div className="w-full max-w-4xl px-8 flex flex-col justify-center h-full">
-      <h2 className="text-4xl md:text-6xl font-bold mb-32 tracking-tighter">You had a lot to say.</h2>
-      
-      <div className="space-y-16">
-        <div>
-          <div className="flex justify-between text-2xl font-bold mb-6">
-            <span className="text-white/40">Sent</span>
-            <span>{stats.messagesSent.toLocaleString()}</span>
-          </div>
-          <div className="h-1 bg-white/5 w-full relative">
-            <motion.div 
-              initial={{ width: 0 }} 
-              animate={{ width: `${sentPercent}%` }} 
-              transition={{ duration: 2, delay: 0.5, ease: [0.16, 1, 0.3, 1] }} 
-              className="absolute top-0 left-0 h-full bg-white shadow-[0_0_20px_rgba(255,255,255,0.5)]" 
-            />
-          </div>
-        </div>
-        
-        <div>
-          <div className="flex justify-between text-2xl font-bold mb-6">
-            <span className="text-white/40">Received</span>
-            <span>{stats.messagesReceived.toLocaleString()}</span>
-          </div>
-          <div className="h-1 bg-white/5 w-full relative">
-            <motion.div 
-              initial={{ width: 0 }} 
-              animate={{ width: `${receivedPercent}%` }} 
-              transition={{ duration: 2, delay: 0.8, ease: [0.16, 1, 0.3, 1] }} 
-              className="absolute top-0 left-0 h-full bg-white/40" 
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
-const SlideMonth = ({ stats }: { stats: WrappedStats }) => (
-  <div className="text-center">
-    <p className="text-2xl text-white/40 font-medium mb-12">Your most active month</p>
-    <motion.div 
-      initial={{ scale: 0.9, opacity: 0, filter: 'blur(20px)' }} 
-      animate={{ scale: 1, opacity: 1, filter: 'blur(0px)' }} 
-      transition={{ delay: 0.5, duration: 1.5, ease: [0.16, 1, 0.3, 1] }} 
-      className="text-[7rem] md:text-[14rem] font-bold tracking-tighter leading-none"
-    >
-      {stats.mostActiveMonth.month}
-    </motion.div>
-    <motion.p 
-      initial={{ opacity: 0 }} 
-      animate={{ opacity: 1 }} 
-      transition={{ delay: 1.5, duration: 1 }} 
-      className="mt-12 text-3xl font-medium text-white/50"
-    >
-      {stats.mostActiveMonth.count.toLocaleString()} messages
-    </motion.p>
-  </div>
-);
 
 const formatHour = (h: number) => {
   if (h === 0) return '12 AM';
@@ -559,43 +504,7 @@ const SlideDensity = ({ stats, showNames }: any) => (
   </div>
 );
 
-const SlideStreak = ({ stats, showNames }: any) => (
-  <div className="text-center max-w-4xl px-8">
-    <p className="text-2xl text-white/40 font-medium mb-16">The Monologue</p>
-    <motion.h2 
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 1 }}
-      className="text-5xl md:text-7xl font-bold tracking-tighter mb-8 leading-tight"
-    >
-      You sent <br/>
-      <span className="text-[6rem] md:text-[9rem] block mt-4">{stats.longestStreak.count}</span> <br/>
-      messages in a row.
-    </motion.h2>
-    <motion.p 
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.5 }}
-      className="text-2xl text-white/40 font-medium mt-12"
-    >
-      To {showNames ? stats.longestStreak.name : "Someone"}. They eventually replied.
-    </motion.p>
-  </div>
-);
 
-const SlideComeback = ({ stats, showNames }: any) => (
-  <div className="text-center max-w-4xl px-8">
-    <p className="text-2xl text-white/40 font-medium mb-16">The Comeback</p>
-    <motion.h2 
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 1 }}
-      className="text-4xl md:text-6xl font-bold tracking-tighter mb-12 leading-tight text-white/60"
-    >
-      After <span className="text-white">{stats.comeback.gapDays} days</span> of silence...
-    </motion.h2>
-    <motion.p 
-      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.5 }}
-      className="text-5xl md:text-7xl font-bold tracking-tighter"
-    >
-      You and {showNames ? stats.comeback.name : "Someone"} <br/> reconnected.
-    </motion.p>
-  </div>
-);
 
 const SlideMidnight = ({ stats, showNames }: any) => (
   <div className="text-center">
@@ -617,40 +526,7 @@ const SlideMidnight = ({ stats, showNames }: any) => (
   </div>
 );
 
-const SlideConsistent = ({ stats, showNames }: any) => (
-  <div className="text-center max-w-4xl px-8">
-    <p className="text-2xl text-white/40 font-medium mb-16">The Daily Habit</p>
-    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="text-3xl font-medium text-white/60 mb-6">
-      You talked to
-    </motion.p>
-    <motion.h2 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 }} className="text-6xl md:text-8xl font-bold tracking-tighter mb-16">
-      {showNames ? stats.consistentConnection.name : "Someone"}
-    </motion.h2>
-    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2 }} className="text-4xl md:text-5xl font-medium text-white/40 tracking-tight">
-      <span className="text-white">{stats.consistentConnection.activeDays}</span> different days this year.
-    </motion.p>
-  </div>
-);
 
-const SlideMedia = ({ stats }: any) => (
-  <div className="text-center">
-    <p className="text-2xl text-white/40 font-medium mb-12">Media Distribution</p>
-    <motion.div 
-      initial={{ scale: 0.9, opacity: 0 }} 
-      animate={{ scale: 1, opacity: 1 }} 
-      transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1], delay: 0.5 }} 
-      className="text-[7rem] md:text-[12rem] font-bold tracking-tighter leading-none mb-8"
-    >
-      {stats.mediaShared.toLocaleString()}
-    </motion.div>
-    <motion.p 
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.5 }}
-      className="text-3xl md:text-5xl font-medium text-white/50 tracking-tight"
-    >
-      photos & videos shared
-    </motion.p>
-  </div>
-);
 
 // Vertical Cascade for Top 5
 const SlideTop5 = ({ stats, showNames }: any) => (

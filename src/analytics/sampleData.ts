@@ -40,8 +40,20 @@ export const sampleStats: WrappedStats = {
     reactions: true
   },
   
+  socialCalendar: [],
+  longestDayStreak: {
+    name: 'Alex',
+    days: 47,
+    startDate: '2025-05-12',
+    endDate: '2025-06-28'
+  },
+  top5Messaged: [],
+  top5Consistent: [],
+  top5Media: [],
+  monthlyTopConnections: [],
+  allConnections: [],
   archetype: {
-    title: 'The Night Owl',
-    description: 'You come alive when the world goes to sleep. Your best conversations happen after midnight.'
+    title: 'The Conversation Machine',
+    description: 'You sent and received an incredible amount of messages. Your DMs are a full-time job.'
   }
 };
