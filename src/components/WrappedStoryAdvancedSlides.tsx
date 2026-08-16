@@ -2,6 +2,19 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import type { WrappedStats } from '../types/instagram';
 
+export const formatMonthTitle = (monthStr: string): string => {
+  if (!monthStr) return '';
+  if (monthStr.includes('-')) {
+    const [year, month] = monthStr.split('-');
+    const date = new Date(parseInt(year, 10), parseInt(month, 10) - 1, 1);
+    if (!isNaN(date.getTime())) {
+      const monthName = date.toLocaleString('default', { month: 'long' });
+      return `${monthName} ${year}`;
+    }
+  }
+  return monthStr;
+};
+
 export const SlideSocialCircle = ({ stats, showNames }: { stats: WrappedStats, showNames?: boolean }) => {
   const top10 = stats.allConnections?.slice(0, 8) || [];
   
@@ -179,7 +192,7 @@ export const SlideTopRankings = ({ stats, showNames }: { stats: WrappedStats, sh
             initial={{ opacity: 0, x: -15 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: idx * 0.08 }}
-            className="flex items-center justify-between p-3 md:p-4 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-md"
+            className="flex items-center justify-between p-3.5 md:p-4 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-md"
           >
             <div className="flex items-center gap-3 md:gap-4 truncate mr-2">
               <span className="text-lg md:text-xl font-black text-white/30">#{idx + 1}</span>
@@ -284,6 +297,8 @@ export const SlideMonthly = ({ stats, showNames }: { stats: WrappedStats, showNa
       <div className="space-y-3 overflow-y-auto max-h-[60vh] pr-1 hide-scrollbar">
         {months.slice(-5).map((m, i) => {
           const ratio = Math.min((m.count / maxCount) * 100, 100);
+          const formattedMonth = formatMonthTitle(m.month);
+
           return (
             <motion.div 
               key={m.month}
@@ -293,8 +308,8 @@ export const SlideMonthly = ({ stats, showNames }: { stats: WrappedStats, showNa
               className="p-3.5 md:p-4 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-md flex flex-col gap-2"
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs md:text-sm font-black text-white/50 tracking-wider uppercase">
-                  {m.month}
+                <span className="text-xs md:text-sm font-black text-white/70 tracking-wider uppercase">
+                  {formattedMonth}
                 </span>
                 <span className="text-xs md:text-sm font-bold text-white/80">
                   {m.count.toLocaleString()} msgs

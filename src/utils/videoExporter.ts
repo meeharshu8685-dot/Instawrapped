@@ -577,7 +577,8 @@ export async function exportWrappedVideo(
           ctx!.textAlign = 'left';
           ctx!.fillStyle = 'rgba(255, 255, 255, 0.45)';
           ctx!.font = '800 28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-          ctx!.fillText(m.month.toUpperCase(), cardX + 35, y + 48);
+          const formattedMonth = m.month.includes('-') ? (new Date(parseInt(m.month.split('-')[0], 10), parseInt(m.month.split('-')[1], 10) - 1, 1).toLocaleString('default', { month: 'long', year: 'numeric' }).toUpperCase()) : m.month.toUpperCase();
+          ctx!.fillText(formattedMonth, cardX + 35, y + 48);
 
           // Name
           ctx!.fillStyle = '#ffffff';
@@ -805,4 +806,5 @@ export async function exportWrappedVideo(
     renderNextFrame();
   });
 }
+
 
