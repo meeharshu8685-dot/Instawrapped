@@ -27,6 +27,93 @@ export const formatMonthTitle = (monthStr: string): string => {
   return monthStr.toUpperCase();
 };
 
+// Canvas Text Safety Helpers
+function drawFittedText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxFontSize: number,
+  maxWidth: number,
+  fontWeight: string = '900',
+  fontFamily: string = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+) {
+  let currentSize = maxFontSize;
+  ctx.font = fontWeight + ' ' + currentSize + 'px ' + fontFamily;
+  let width = ctx.measureText(text).width;
+
+  if (width > maxWidth && width > 0) {
+    currentSize = Math.max(Math.floor(maxFontSize * (maxWidth / width)), 24);
+    ctx.font = fontWeight + ' ' + currentSize + 'px ' + fontFamily;
+    width = ctx.measureText(text).width;
+  }
+
+  if (width > maxWidth) {
+    let truncated = text;
+    while (truncated.length > 3 && ctx.measureText(truncated + '...').width > maxWidth) {
+      truncated = truncated.slice(0, -1);
+    }
+    ctx.fillText(truncated + '...', x, y);
+  } else {
+    ctx.fillText(text, x, y);
+  }
+}
+
+function drawTruncatedText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number
+) {
+  const measured = ctx.measureText(text).width;
+  if (measured <= maxWidth) {
+    ctx.fillText(text, x, y);
+    return;
+  }
+  let truncated = text;
+  while (truncated.length > 3 && ctx.measureText(truncated + '...').width > maxWidth) {
+    truncated = truncated.slice(0, -1);
+  }
+  ctx.fillText(truncated + '...', x, y);
+}
+
+function wrapAndDrawText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  startY: number,
+  maxWidth: number,
+  lineHeight: number,
+  maxLines: number = 4
+) {
+  const words = text.split(' ');
+  let line = '';
+  let currentY = startY;
+  let linesDrawn = 0;
+
+  for (let i = 0; i < words.length; i++) {
+    const testLine = line ? line + ' ' + words[i] : words[i];
+    const testWidth = ctx.measureText(testLine).width;
+
+    if (testWidth > maxWidth && line) {
+      linesDrawn++;
+      if (linesDrawn === maxLines && i < words.length) {
+        drawTruncatedText(ctx, line + '...', x, currentY, maxWidth);
+        return;
+      }
+      ctx.fillText(line, x, currentY);
+      line = words[i];
+      currentY += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+  if (line && linesDrawn < maxLines) {
+    ctx.fillText(line, x, currentY);
+  }
+}
+
 export async function exportWrappedVideo(
   stats: WrappedStats,
   showNames: boolean = true,
@@ -367,15 +454,13 @@ function createTimeline(
         ctx.save();
         ctx.textAlign = 'center';
         ctx.fillStyle = 'rgba(255, 255, 255, ' + titleAlpha + ')';
-        ctx.font = '900 115px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        ctx.fillText('Your Instagram,', width / 2, titleY);
-        ctx.fillText('wrapped.', width / 2, titleY + 130);
+        drawFittedText(ctx, 'Your Instagram,', width / 2, titleY, 110, 920);
+        drawFittedText(ctx, 'wrapped.', width / 2, titleY + 130, 110, 920);
 
         if (p > 0.25) {
           const subAlpha = Math.min((p - 0.25) * 2, 1);
           ctx.fillStyle = 'rgba(255, 255, 255, ' + (subAlpha * 0.45) + ')';
-          ctx.font = '800 44px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-          ctx.fillText('2026 EDITION', width / 2, titleY + 300);
+          drawFittedText(ctx, '2026 EDITION', width / 2, titleY + 300, 44, 800, '800');
         }
         ctx.restore();
       }
@@ -393,16 +478,13 @@ function createTimeline(
         ctx.textAlign = 'center';
 
         ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-        ctx.font = '700 42px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        ctx.fillText('First things first...', width / 2, 680);
+        drawFittedText(ctx, 'First things first...', width / 2, 680, 42, 800, '700');
 
         ctx.fillStyle = '#ffffff';
-        ctx.font = '900 175px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        ctx.fillText(currentCount.toLocaleString(), width / 2, 910);
+        drawFittedText(ctx, currentCount.toLocaleString(), width / 2, 910, 160, 940, '900');
 
         ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-        ctx.font = '800 54px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        ctx.fillText('messages exchanged', width / 2, 1030);
+        drawFittedText(ctx, 'messages exchanged', width / 2, 1030, 54, 880, '800');
 
         if (p > 0.3) {
           const barAlpha = Math.min((p - 0.3) * 2, 1);
@@ -422,12 +504,12 @@ function createTimeline(
           ctx.roundRect(barX, barY, barW * sentRatio * Math.min((p - 0.3) * 2, 1), barH, 9);
           ctx.fill();
 
-          ctx.font = '700 32px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-          ctx.fillStyle = 'rgba(255, 255, 255, ' + (barAlpha * 0.7) + ')';
+          ctx.font = '700 30px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+          ctx.fillStyle = 'rgba(255, 255, 255, ' + (barAlpha * 0.75) + ')';
           ctx.textAlign = 'left';
-          ctx.fillText('Sent: ' + stats.messagesSent.toLocaleString(), barX, barY + 60);
+          drawTruncatedText(ctx, 'Sent: ' + stats.messagesSent.toLocaleString(), barX, barY + 60, 360);
           ctx.textAlign = 'right';
-          ctx.fillText('Received: ' + stats.messagesReceived.toLocaleString(), barX + barW, barY + 60);
+          drawTruncatedText(ctx, 'Received: ' + stats.messagesReceived.toLocaleString(), barX + barW, barY + 60, 360);
         }
         ctx.restore();
       }
@@ -442,8 +524,7 @@ function createTimeline(
         ctx.textAlign = 'center';
 
         ctx.fillStyle = '#ffffff';
-        ctx.font = '900 68px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        ctx.fillText('Your Social Circle', width / 2, 450);
+        drawFittedText(ctx, 'Your Social Circle', width / 2, 450, 68, 880, '900');
 
         const centerX = width / 2;
         const centerY = 920;
@@ -451,18 +532,18 @@ function createTimeline(
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.arc(centerX, centerY, 240, 0, Math.PI * 2);
+        ctx.arc(centerX, centerY, 230, 0, Math.PI * 2);
         ctx.stroke();
 
         const centerScale = easeOutCubic(Math.min(p * 2, 1));
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
-        ctx.arc(centerX, centerY, 75 * centerScale, 0, Math.PI * 2);
+        ctx.arc(centerX, centerY, 70 * centerScale, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.fillStyle = '#000000';
-        ctx.font = '900 36px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        ctx.fillText('YOU', centerX, centerY + 12);
+        ctx.font = '900 34px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillText('YOU', centerX, centerY + 11);
 
         const topSlice = topConns.slice(0, 8);
         const maxM = topSlice[0]?.messageCount || 1;
@@ -472,10 +553,10 @@ function createTimeline(
           if (p < delay) return;
           const nodeP = easeOutCubic(Math.min((p - delay) * 2, 1));
           const angle = (i / topSlice.length) * Math.PI * 2 + t * 0.5;
-          const radius = 240 + (i % 2) * 55;
+          const radius = 220 + (i % 2) * 45;
           const x = centerX + Math.cos(angle) * radius * nodeP;
           const y = centerY + Math.sin(angle) * radius * nodeP;
-          const size = 35 + (conn.messageCount / maxM) * 45;
+          const size = 32 + (conn.messageCount / maxM) * 38;
 
           ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
           ctx.beginPath();
@@ -490,21 +571,19 @@ function createTimeline(
           ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
           ctx.stroke();
 
-          if (showNames && size > 45) {
+          if (showNames && size > 40) {
             ctx.fillStyle = '#ffffff';
-            ctx.font = '800 22px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-            ctx.fillText(conn.name.split(' ')[0], x, y + 8);
+            ctx.font = '800 20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            drawTruncatedText(ctx, conn.name.split(' ')[0], x, y + 7, 120);
           }
         });
 
         if (p > 0.4) {
           const statAlpha = Math.min((p - 0.4) * 2, 1);
           ctx.fillStyle = 'rgba(255, 255, 255, ' + statAlpha + ')';
-          ctx.font = '900 110px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-          ctx.fillText(stats.uniqueContacts.toLocaleString(), width / 2, 1420);
-          ctx.fillStyle = 'rgba(255, 255, 255, ' + (statAlpha * 0.6) + ')';
-          ctx.font = '700 38px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-          ctx.fillText('people in your universe', width / 2, 1490);
+          drawFittedText(ctx, stats.uniqueContacts.toLocaleString(), width / 2, 1420, 110, 880, '900');
+          ctx.fillStyle = 'rgba(255, 255, 255, ' + (statAlpha * 0.65) + ')';
+          drawFittedText(ctx, 'people in your universe', width / 2, 1490, 38, 800, '700');
         }
         ctx.restore();
       }
@@ -519,8 +598,7 @@ function createTimeline(
         ctx.textAlign = 'center';
 
         ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-        ctx.font = '700 44px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        ctx.fillText('Your #1 was...', width / 2, 650);
+        drawFittedText(ctx, 'Your #1 was...', width / 2, 650, 44, 800, '700');
 
         const nameAlpha = easeOutCubic(Math.min(p * 1.4, 1));
         const nameScale = 0.85 + 0.15 * easeOutExpo(Math.min(p * 1.4, 1));
@@ -529,21 +607,19 @@ function createTimeline(
         ctx.translate(width / 2, 890);
         ctx.scale(nameScale, nameScale);
         ctx.fillStyle = 'rgba(255, 255, 255, ' + nameAlpha + ')';
-        ctx.font = '900 120px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        ctx.fillText(showNames ? top1.name : 'Your Best Friend', 0, 0);
+        const topDisplayName = showNames ? top1.name : 'Your Best Friend';
+        drawFittedText(ctx, topDisplayName, 0, 0, 105, 880, '900');
         ctx.restore();
 
         if (p > 0.35) {
           const countP = easeOutExpo(Math.min((p - 0.35) * 1.5, 1));
           const currentCount = Math.floor(top1.messageCount * countP);
           ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-          ctx.font = '800 54px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-          ctx.fillText(currentCount.toLocaleString() + ' messages', width / 2, 1050);
+          drawFittedText(ctx, currentCount.toLocaleString() + ' messages', width / 2, 1050, 54, 880, '800');
 
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-          ctx.font = '600 32px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
           const pct = Math.round((top1.messageCount / (stats.totalMessages || 1)) * 100);
-          ctx.fillText('Made up ' + pct + '% of all your messages', width / 2, 1130);
+          drawFittedText(ctx, 'Made up ' + pct + '% of all your messages', width / 2, 1130, 32, 800, '600');
         }
         ctx.restore();
       }
@@ -558,8 +634,7 @@ function createTimeline(
         ctx.textAlign = 'center';
 
         ctx.fillStyle = '#ffffff';
-        ctx.font = '900 68px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        ctx.fillText('Your Inner Circle', width / 2, 450);
+        drawFittedText(ctx, 'Your Inner Circle', width / 2, 450, 68, 880, '900');
 
         top5.forEach((conn, i) => {
           const delay = 0.08 + i * 0.1;
@@ -586,14 +661,14 @@ function createTimeline(
           ctx.fillText('0' + (i + 1), cardX + 35, y + 74);
 
           ctx.fillStyle = '#ffffff';
-          ctx.font = '800 44px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+          ctx.font = '800 42px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
           const displayName = showNames ? conn.name : 'Friend 0' + (i + 1);
-          ctx.fillText(displayName.length > 15 ? displayName.substring(0, 13) + '...' : displayName, cardX + 115, y + 74);
+          drawTruncatedText(ctx, displayName, cardX + 115, y + 74, 460);
 
           ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
-          ctx.font = '700 36px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+          ctx.font = '700 34px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
           ctx.textAlign = 'right';
-          ctx.fillText(conn.messageCount.toLocaleString() + ' msgs', cardX + cardW - 35, y + 74);
+          drawTruncatedText(ctx, conn.messageCount.toLocaleString() + ' msgs', cardX + cardW - 35, y + 74, 240);
         });
         ctx.restore();
       }
@@ -608,16 +683,13 @@ function createTimeline(
         ctx.textAlign = 'center';
 
         ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-        ctx.font = '700 40px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        ctx.fillText('Your Social Calendar', width / 2, 450);
+        drawFittedText(ctx, 'Your Social Calendar', width / 2, 450, 40, 800, '700');
 
         ctx.fillStyle = '#ffffff';
-        ctx.font = '900 135px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        ctx.fillText(stats.activeDaysCount.toString(), width / 2, 630);
+        drawFittedText(ctx, stats.activeDaysCount.toString(), width / 2, 630, 130, 880, '900');
 
         ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
-        ctx.font = '800 50px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        ctx.fillText('active days in 2026', width / 2, 730);
+        drawFittedText(ctx, 'active days in 2026', width / 2, 730, 50, 880, '800');
 
         const daysToShow = cal.slice(-108);
         const cols = 12;
@@ -651,8 +723,7 @@ function createTimeline(
 
         if (p > 0.5) {
           ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-          ctx.font = '700 30px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-          ctx.fillText('Peak: ' + stats.peakDayOfWeek + ' at ' + (stats.peakHour > 12 ? (stats.peakHour - 12) + ' PM' : stats.peakHour + ' AM'), width / 2, 1600);
+          drawFittedText(ctx, 'Peak: ' + stats.peakDayOfWeek + ' at ' + (stats.peakHour > 12 ? (stats.peakHour - 12) + ' PM' : stats.peakHour + ' AM'), width / 2, 1600, 30, 800, '700');
         }
         ctx.restore();
       }
@@ -669,27 +740,22 @@ function createTimeline(
         ctx.textAlign = 'center';
 
         ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-        ctx.font = '700 44px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        ctx.fillText('Longest Daily Streak', width / 2, 590);
+        drawFittedText(ctx, 'Longest Daily Streak', width / 2, 590, 44, 800, '700');
 
         ctx.fillStyle = '#ffffff';
-        ctx.font = '900 240px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        ctx.fillText(streakCount.toString(), width / 2, 880);
+        drawFittedText(ctx, streakCount.toString(), width / 2, 880, 220, 900, '900');
 
         ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-        ctx.font = '800 56px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        ctx.fillText('consecutive days chatting', width / 2, 1010);
+        drawFittedText(ctx, 'consecutive days chatting', width / 2, 1010, 56, 880, '800');
 
         if (p > 0.35) {
           const subAlpha = Math.min((p - 0.35) * 2, 1);
           ctx.fillStyle = 'rgba(255, 255, 255, ' + (subAlpha * 0.8) + ')';
-          ctx.font = '700 44px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-          ctx.fillText('with ' + (showNames ? streak.name : 'Someone special'), width / 2, 1140);
+          drawFittedText(ctx, 'with ' + (showNames ? streak.name : 'Someone special'), width / 2, 1140, 44, 880, '700');
 
           if (streak.startDate && streak.endDate) {
             ctx.fillStyle = 'rgba(255, 255, 255, ' + (subAlpha * 0.45) + ')';
-            ctx.font = '600 30px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-            ctx.fillText(streak.startDate + '  →  ' + streak.endDate, width / 2, 1220);
+            drawFittedText(ctx, streak.startDate + '  →  ' + streak.endDate, width / 2, 1220, 30, 800, '600');
           }
         }
         ctx.restore();
@@ -705,8 +771,7 @@ function createTimeline(
         ctx.textAlign = 'center';
 
         ctx.fillStyle = '#ffffff';
-        ctx.font = '900 68px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        ctx.fillText('Month by Month', width / 2, 420);
+        drawFittedText(ctx, 'Month by Month', width / 2, 420, 68, 880, '900');
 
         months.forEach((m, i) => {
           const delay = 0.08 + i * 0.12;
@@ -725,17 +790,18 @@ function createTimeline(
 
           ctx.textAlign = 'left';
           ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-          ctx.font = '800 28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-          ctx.fillText(formatMonthTitle(m.month), cardX + 35, y + 48);
+          ctx.font = '800 26px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+          drawTruncatedText(ctx, formatMonthTitle(m.month), cardX + 35, y + 48, 400);
 
           ctx.fillStyle = '#ffffff';
-          ctx.font = '800 42px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-          ctx.fillText(showNames ? m.name : 'Top Contact', cardX + 35, y + 100);
+          ctx.font = '800 40px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+          const contactName = showNames ? m.name : 'Top Contact';
+          drawTruncatedText(ctx, contactName, cardX + 35, y + 100, 480);
 
           ctx.textAlign = 'right';
           ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-          ctx.font = '700 36px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-          ctx.fillText(m.count.toLocaleString() + ' msgs', cardX + cardW - 35, y + 80);
+          ctx.font = '700 34px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+          drawTruncatedText(ctx, m.count.toLocaleString() + ' msgs', cardX + cardW - 35, y + 80, 260);
 
           const barW = (cardW - 70) * Math.min(m.count / maxMonthCount, 1) * itemP;
           ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
@@ -754,37 +820,21 @@ function createTimeline(
         ctx.textAlign = 'center';
 
         ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-        ctx.font = '700 42px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        ctx.fillText('Your 2026 Archetype', width / 2, 590);
+        drawFittedText(ctx, 'Your 2026 Archetype', width / 2, 590, 42, 800, '700');
 
         const titleScale = 0.85 + 0.15 * easeOutExpo(Math.min(p * 1.4, 1));
         ctx.save();
         ctx.translate(width / 2, 850);
         ctx.scale(titleScale, titleScale);
         ctx.fillStyle = '#ffffff';
-        ctx.font = '900 100px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        ctx.fillText(stats.archetype.title, 0, 0);
+        drawFittedText(ctx, stats.archetype.title, 0, 0, 95, 880, '900');
         ctx.restore();
 
         if (p > 0.3) {
           const descAlpha = Math.min((p - 0.3) * 2, 1);
-          ctx.fillStyle = 'rgba(255, 255, 255, ' + (descAlpha * 0.7) + ')';
-          ctx.font = '500 42px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-
-          const words = stats.archetype.description.split(' ');
-          let line = '';
-          let lineY = 1040;
-          for (const word of words) {
-            const testLine = line + word + ' ';
-            if (ctx.measureText(testLine).width > 860) {
-              ctx.fillText(line, width / 2, lineY);
-              line = word + ' ';
-              lineY += 60;
-            } else {
-              line = testLine;
-            }
-          }
-          ctx.fillText(line, width / 2, lineY);
+          ctx.fillStyle = 'rgba(255, 255, 255, ' + (descAlpha * 0.75) + ')';
+          ctx.font = '500 40px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+          wrapAndDrawText(ctx, stats.archetype.description, width / 2, 1040, 860, 58, 4);
         }
         ctx.restore();
       }
@@ -799,16 +849,13 @@ function createTimeline(
         ctx.textAlign = 'center';
 
         ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-        ctx.font = '800 44px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        ctx.fillText('THAT WAS YOUR', width / 2, 590);
+        drawFittedText(ctx, 'THAT WAS YOUR', width / 2, 590, 44, 800, '800');
 
         ctx.fillStyle = '#ffffff';
-        ctx.font = '900 115px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        ctx.fillText('INSTAWRAPPED', width / 2, 720);
+        drawFittedText(ctx, 'INSTAWRAPPED', width / 2, 720, 110, 900, '900');
 
         ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-        ctx.font = '800 64px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        ctx.fillText('2026', width / 2, 820);
+        drawFittedText(ctx, '2026', width / 2, 820, 64, 800, '800');
 
         if (p > 0.25) {
           const pillAlpha = Math.min((p - 0.25) * 2, 1);
@@ -826,21 +873,19 @@ function createTimeline(
           ctx.stroke();
 
           ctx.fillStyle = '#ffffff';
-          ctx.font = '900 74px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-          ctx.fillText(stats.totalMessages.toLocaleString(), width / 2, cardY + 110);
+          drawFittedText(ctx, stats.totalMessages.toLocaleString(), width / 2, cardY + 110, 74, 780, '900');
 
           ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
-          ctx.font = '700 36px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-          ctx.fillText('Messages Exchanged across ' + stats.activeDaysCount + ' Days', width / 2, cardY + 180);
+          drawFittedText(ctx, 'Messages Exchanged across ' + stats.activeDaysCount + ' Days', width / 2, cardY + 180, 36, 780, '700');
 
           ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
           ctx.font = '800 34px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-          ctx.fillText('Top Connection: ' + (showNames ? (top1.name || 'Nobody') : 'Hidden'), width / 2, cardY + 260);
+          const finalTopName = showNames ? (top1.name || 'Nobody') : 'Hidden';
+          drawTruncatedText(ctx, 'Top Connection: ' + finalTopName, width / 2, cardY + 260, 780);
         }
 
         ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
-        ctx.font = '700 32px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        ctx.fillText('instawrapped-dun.vercel.app', width / 2, 1540);
+        drawFittedText(ctx, 'instawrapped-dun.vercel.app', width / 2, 1540, 32, 800, '700');
 
         ctx.restore();
       }

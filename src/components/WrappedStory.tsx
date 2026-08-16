@@ -431,7 +431,7 @@ const SlideIntro = () => (
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-      className="text-5xl md:text-[7.5rem] font-black tracking-tighter mb-4 leading-none text-white"
+      className="text-4xl sm:text-6xl md:text-8xl font-black tracking-tighter mb-3 sm:mb-4 leading-tight text-white break-words"
     >
       Your Instagram, <br/> wrapped.
     </motion.h1>
@@ -459,7 +459,7 @@ const SlideTotal = ({ stats }: { stats: WrappedStats }) => (
       initial={{ y: 20, opacity: 0, filter: 'blur(10px)' }} 
       animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }} 
       transition={{ delay: 0.5, duration: 1.2, ease: [0.16, 1, 0.3, 1] }} 
-      className="text-[5.5rem] md:text-[10rem] font-black leading-none tracking-tighter drop-shadow-2xl mb-4 text-white"
+      className="text-4xl sm:text-6xl md:text-8xl lg:text-[9rem] font-black leading-none tracking-tighter drop-shadow-2xl mb-3 text-white break-all max-w-full"
     >
       {stats.totalMessages.toLocaleString()}
     </motion.div>
@@ -467,7 +467,7 @@ const SlideTotal = ({ stats }: { stats: WrappedStats }) => (
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ delay: 1, duration: 0.8 }}
-      className="text-2xl md:text-4xl font-bold text-white/70 tracking-tight"
+      className="text-xl sm:text-2xl md:text-4xl font-bold text-white/70 tracking-tight"
     >
       messages exchanged
     </motion.p>
@@ -566,7 +566,7 @@ const SlideTop5 = ({ stats, showNames }: any) => (
   <div className="w-full max-w-lg px-4 md:px-8 flex flex-col h-full justify-center py-8 mx-auto">
     <div className="text-center mb-8">
       <p className="text-xs md:text-sm font-bold tracking-[0.25em] text-white/50 uppercase mb-1">Inner Circle</p>
-      <h2 className="text-3xl md:text-5xl font-black tracking-tighter text-white">Your Top Friends</h2>
+      <h2 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tighter text-white">Your Top Friends</h2>
     </div>
 
     <div className="space-y-3">
@@ -580,7 +580,7 @@ const SlideTop5 = ({ stats, showNames }: any) => (
         >
           <div className="flex items-center gap-3 md:gap-4 truncate mr-2">
             <span className="text-lg md:text-xl font-black text-white/30">0{i + 1}</span>
-            <span className="text-base md:text-xl font-bold tracking-tight truncate text-white">
+            <span className="text-sm sm:text-base md:text-xl font-bold tracking-tight truncate text-white max-w-[150px] sm:max-w-[200px]">
               {showNames ? conn.name : `Friend ${i + 1}`}
             </span>
           </div>
@@ -608,14 +608,14 @@ const SlideTop1 = ({ stats, showNames }: any) => (
       transition={{ delay: 0.8, duration: 1.2, ease: [0.16, 1, 0.3, 1] }} 
       className="relative mb-6"
     >
-      <h2 className="text-5xl md:text-7xl font-black tracking-tighter text-white break-words">
+      <h2 className="text-3xl sm:text-4xl md:text-6xl font-black tracking-tighter text-white break-words line-clamp-2 max-w-full px-2">
         {showNames ? (stats.topConnections[0]?.name || "Someone") : "Your Best Friend"}
       </h2>
     </motion.div>
 
     <motion.p 
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.6 }}
-      className="text-2xl md:text-4xl text-white/80 font-extrabold tracking-tight"
+      className="text-xl sm:text-2xl md:text-4xl text-white/80 font-extrabold tracking-tight mt-1"
     >
       {stats.topConnections[0]?.messageCount.toLocaleString()} messages
     </motion.p>
@@ -626,10 +626,10 @@ const SlideArchetype = ({ stats }: any) => (
   <div className="text-center max-w-xl px-6 flex flex-col justify-center h-full mx-auto py-8">
     <p className="text-xs md:text-sm font-bold tracking-[0.25em] text-white/50 uppercase mb-4">Your 2026 Personality</p>
     <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3, duration: 1, ease: [0.16, 1, 0.3, 1] }}>
-      <h2 className="text-4xl md:text-6xl font-black tracking-tighter leading-tight mb-6 drop-shadow-2xl text-white">
+      <h2 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tighter leading-tight mb-3 drop-shadow-2xl text-white break-words">
         {stats.archetype.title}
       </h2>
-      <p className="text-lg md:text-2xl text-white/60 leading-relaxed font-medium">
+      <p className="text-sm sm:text-base md:text-xl text-white/70 leading-relaxed font-medium break-words px-2 max-w-md mx-auto">
         {stats.archetype.description}
       </p>
     </motion.div>
