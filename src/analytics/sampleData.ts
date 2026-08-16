@@ -49,6 +49,13 @@ export const sampleStats: WrappedStats = {
   },
   monthlyTopConnections: [],
   allConnections: [],
+  reelsWatchedStats: {
+    totalWatched: 2847,
+    peakHour: 23,
+    peakDayOfWeek: 'Sunday',
+    peakMonth: 'August',
+    headlineJoke: 'You said "one more Reel." Instagram heard 2,847. 💀'
+  },
   archetype: {
     title: 'The Conversation Machine',
     description: 'You sent and received an incredible amount of messages. Your DMs are a full-time job.'

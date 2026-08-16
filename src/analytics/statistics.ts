@@ -1,6 +1,26 @@
-import type { ConnectionStat, InstaConversation, WrappedStats, Capabilities, ExportRange } from '../types/instagram';
+export const getReelEraJoke = (count: number): string => {
+  if (count < 500) {
+    return "Honestly... pretty reasonable. You have actual self-control.";
+  } else if (count < 1500) {
+    return "Okay, you definitely had a Reel phase this year.";
+  } else if (count < 3000) {
+    return `You said "one more Reel." Instagram heard ${count.toLocaleString()}. 💀`;
+  } else if (count < 6000) {
+    return "Yeah... you were busy. Just not with what you planned. 💀";
+  } else if (count < 10000) {
+    return "At this point, Instagram was basically your second home.";
+  } else {
+    return "Your thumb deserves an all-inclusive tropical vacation. 🏖️";
+  }
+};
 
-export const calculateStats = (conversations: InstaConversation[], exportRange: ExportRange): WrappedStats => {
+import type { ConnectionStat, InstaConversation, WrappedStats, Capabilities, ExportRange, ReelsWatchEvent, ReelsWatchStats } from '../types/instagram';
+
+export const calculateStats = (
+  conversations: InstaConversation[],
+  exportRange: ExportRange = 'all',
+  reelsEvents?: ReelsWatchEvent[]
+): WrappedStats => {
   const caps: Capabilities = {
     messages: false,
     timestamps: false,
@@ -396,8 +416,56 @@ export const calculateStats = (conversations: InstaConversation[], exportRange: 
         topName = name;
       }
     });
-    return { month, name: topName, count: topCount };
+      return { month, name: topName, count: topCount };
   }).sort((a, b) => a.month.localeCompare(b.month));
+
+  // Calculate Reels Watch Stats if available
+  let reelsWatchedStats: ReelsWatchStats | null = null;
+  if (reelsEvents && reelsEvents.length > 0) {
+    const totalWatched = reelsEvents.length;
+    const hourCounts = new Array(24).fill(0);
+    const dayCounts: Record<string, number> = {};
+    const monthCounts: Record<string, number> = {};
+    const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+    reelsEvents.forEach(e => {
+      const d = new Date(e.timestamp);
+      if (!isNaN(d.getTime())) {
+        hourCounts[d.getHours()]++;
+        const day = daysOfWeek[d.getDay()];
+        dayCounts[day] = (dayCounts[day] || 0) + 1;
+        const month = d.toLocaleString('default', { month: 'long' });
+        monthCounts[month] = (monthCounts[month] || 0) + 1;
+      }
+    });
+
+    let peakHour = 0;
+    let maxH = 0;
+    hourCounts.forEach((cnt, h) => {
+      if (cnt > maxH) { maxH = cnt; peakHour = h; }
+    });
+
+    let peakDayOfWeek = 'Sunday';
+    let maxD = 0;
+    Object.entries(dayCounts).forEach(([day, cnt]) => {
+      if (cnt > maxD) { maxD = cnt; peakDayOfWeek = day; }
+    });
+
+    let peakMonth = '';
+    let maxM = 0;
+    Object.entries(monthCounts).forEach(([month, cnt]) => {
+      if (cnt > maxM) { maxM = cnt; peakMonth = month; }
+    });
+
+    reelsWatchedStats = {
+      totalWatched,
+      peakMonth: maxM > 0 ? peakMonth : undefined,
+      peakHour: maxH > 0 ? peakHour : undefined,
+      peakDayOfWeek: maxD > 0 ? peakDayOfWeek : undefined,
+      headlineJoke: getReelEraJoke(totalWatched)
+    };
+  }
+
 
   return {
     debug: {
@@ -425,6 +493,7 @@ export const calculateStats = (conversations: InstaConversation[], exportRange: 
     midnightConnection: topMidnightCount > 10 ? { name: topMidnightName, count: topMidnightCount } : null,
     consistentConnection: mostConsistent ? { name: mostConsistent.name, activeDays: mostConsistent.activeDays } : null,
     topConnections,
+    reelsWatchedStats,
     archetype: { title: archetypeTitle, description: archetypeDesc },
     
     // New Advanced Social Insights

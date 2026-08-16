@@ -41,7 +41,7 @@ const UploadZone: React.FC<Props> = ({ onDataLoaded, exportRange }) => {
     try {
       // Step 0: "Looking through your year..."
       setProcessingStepIndex(0);
-      const conversations = await parseInstagramZip(file, () => {});
+      const { conversations, reelsEvents } = await parseInstagramZip(file, () => {});
       
       // Step 1: "Finding your conversations..."
       setProcessingStepIndex(1);
@@ -49,7 +49,7 @@ const UploadZone: React.FC<Props> = ({ onDataLoaded, exportRange }) => {
       
       // Step 2: "Finding your people..."
       setProcessingStepIndex(2);
-      const stats = calculateStats(conversations, exportRange);
+      const stats = calculateStats(conversations, exportRange, reelsEvents);
       await new Promise(r => setTimeout(r, 1000));
       
       // Step 3: "Finding your patterns..."

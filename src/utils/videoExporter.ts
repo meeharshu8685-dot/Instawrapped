@@ -810,6 +810,75 @@ function createTimeline(
         ctx.restore();
       }
     },
+    ...(stats.reelsWatchedStats && stats.reelsWatchedStats.totalWatched > 0 ? [{
+      theme: '#833AB4',
+      secondary: '#E1306C',
+      marquee: 'REEL ERA',
+      duration: 3.8,
+      render: (ctx: CanvasRenderingContext2D, p: number) => {
+        const reels = stats.reelsWatchedStats!;
+        const countP = easeOutExpo(Math.min(p * 1.4, 1));
+        const currentCount = Math.floor(reels.totalWatched * countP);
+
+        ctx.save();
+        ctx.textAlign = 'center';
+
+        // Eyebrow
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        drawFittedText(ctx, 'AND FINALLY...', width / 2, 520, 36, 800, '900');
+
+        // Headline
+        ctx.fillStyle = '#ffffff';
+        drawFittedText(ctx, 'WE NEED TO TALK', width / 2, 620, 64, 880, '900');
+        drawFittedText(ctx, 'ABOUT YOUR REEL ERA.', width / 2, 700, 64, 880, '900');
+
+        // Number
+        const numScale = 0.85 + 0.15 * easeOutExpo(Math.min(p * 1.4, 1));
+        ctx.save();
+        ctx.translate(width / 2, 920);
+        ctx.scale(numScale, numScale);
+        ctx.fillStyle = '#ffffff';
+        drawFittedText(ctx, currentCount.toLocaleString(), 0, 0, 180, 920, '900');
+        ctx.restore();
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        drawFittedText(ctx, 'Reels watched', width / 2, 1020, 48, 800, '800');
+
+        // Joke Pill
+        if (p > 0.35) {
+          const pillAlpha = Math.min((p - 0.35) * 2, 1);
+          const cardW = 860;
+          const cardH = 150;
+          const cardX = (width - cardW) / 2;
+          const cardY = 1140;
+
+          ctx.fillStyle = 'rgba(255, 255, 255, ' + (pillAlpha * 0.15) + ')';
+          ctx.beginPath();
+          ctx.roundRect(cardX, cardY, cardW, cardH, 24);
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(255, 255, 255, ' + (pillAlpha * 0.25) + ')';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          ctx.fillStyle = 'rgba(255, 255, 255, ' + (pillAlpha * 0.95) + ')';
+          ctx.font = '700 36px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+          wrapAndDrawText(ctx, '"' + reels.headlineJoke + '"', width / 2, cardY + 65, 800, 48, 2);
+        }
+
+        // Supporting Stat
+        if (p > 0.5) {
+          const subText = reels.peakMonth 
+            ? 'Peak Reel month: ' + reels.peakMonth 
+            : (reels.peakHour !== undefined 
+                ? 'Peak Reel hour: ' + (reels.peakHour > 12 ? (reels.peakHour - 12) + ' PM' : (reels.peakHour === 0 ? '12 AM' : reels.peakHour + ' AM'))
+                : 'Most Reel-heavy day: ' + reels.peakDayOfWeek);
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+          drawFittedText(ctx, subText, width / 2, 1380, 32, 800, '600');
+        }
+
+        ctx.restore();
+      }
+    }] : []),
     {
       theme: '#D81B60',
       secondary: '#833AB4',

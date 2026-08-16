@@ -111,6 +111,7 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
     // Optional extra density/midnight slides
     if (stats.fastestDensity) slides.push({ id: 'density', component: SlideDensity });
     if (stats.midnightConnection) slides.push({ id: 'midnight', component: SlideMidnight });
+    if (stats.reelsWatchedStats && stats.reelsWatchedStats.totalWatched > 0) slides.push({ id: 'reels_watched', component: SlideReelsWatched });
     
     slides.push({ id: 'archetype', component: SlideArchetype });
     slides.push({ id: 'share', component: SlideShare });
@@ -621,6 +622,105 @@ const SlideTop1 = ({ stats, showNames }: any) => (
     </motion.p>
   </div>
 );
+
+
+const SlideReelsWatched = ({ stats }: { stats: WrappedStats }) => {
+  const reels = stats.reelsWatchedStats;
+  if (!reels || reels.totalWatched <= 0) return null;
+
+  const [displayCount, setDisplayCount] = useState(0);
+
+  useEffect(() => {
+        const end = reels.totalWatched;
+    const duration = 1600;
+    const startTime = performance.now();
+
+    const updateCounter = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      setDisplayCount(Math.floor(easeOut * end));
+
+      if (progress < 1) {
+        requestAnimationFrame(updateCounter);
+      } else {
+        setDisplayCount(end);
+      }
+    };
+
+    requestAnimationFrame(updateCounter);
+  }, [reels.totalWatched]);
+
+  return (
+    <div className="text-center max-w-xl px-4 sm:px-6 flex flex-col justify-center items-center h-full mx-auto py-6">
+      {/* Eyebrow */}
+      <motion.p
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="text-[11px] sm:text-xs md:text-sm font-black tracking-[0.3em] text-white/50 uppercase mb-2 sm:mb-3"
+      >
+        AND FINALLY...
+      </motion.p>
+
+      {/* Main Headline */}
+      <motion.h2
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.2, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tighter leading-tight mb-3 sm:mb-4 text-white uppercase"
+      >
+        WE NEED TO TALK <br/>
+        <span className="bg-gradient-to-r from-insta-pink via-red-400 to-insta-orange bg-clip-text text-transparent">
+          ABOUT YOUR REEL ERA.
+        </span>
+      </motion.h2>
+
+      {/* Hero Animated Number */}
+      <motion.div
+        initial={{ scale: 0.75, opacity: 0, filter: 'blur(15px)' }}
+        animate={{ scale: 1, opacity: 1, filter: 'blur(0px)' }}
+        transition={{ delay: 0.4, duration: 1, ease: [0.16, 1, 0.3, 1] }}
+        className="my-2 sm:my-3"
+      >
+        <div className="text-6xl sm:text-7xl md:text-9xl font-black tracking-tighter text-white leading-none drop-shadow-[0_10px_35px_rgba(225,48,108,0.5)]">
+          {displayCount.toLocaleString()}
+        </div>
+        <p className="text-base sm:text-xl md:text-2xl font-extrabold text-white/70 tracking-tight mt-1">
+          Reels watched
+        </p>
+      </motion.div>
+
+      {/* Dynamic Joke */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.2, duration: 0.8 }}
+        className="mt-4 sm:mt-6 px-4 py-3 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-md max-w-md mx-auto"
+      >
+        <p className="text-sm sm:text-base md:text-lg font-bold text-white leading-snug">
+          "{reels.headlineJoke}"
+        </p>
+      </motion.div>
+
+      {/* Optional Supporting Stat */}
+      {(reels.peakMonth || reels.peakHour !== undefined || reels.peakDayOfWeek) && (
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.6, duration: 0.8 }}
+          className="text-xs sm:text-sm text-white/50 mt-4 font-semibold tracking-wide"
+        >
+          {reels.peakMonth 
+            ? `Peak Reel month: ${reels.peakMonth}` 
+            : (reels.peakHour !== undefined 
+                ? `Peak Reel hour: ${reels.peakHour > 12 ? (reels.peakHour - 12) + ' PM' : (reels.peakHour === 0 ? '12 AM' : reels.peakHour + ' AM')}`
+                : `Most Reel-heavy day: ${reels.peakDayOfWeek}`)}
+        </motion.p>
+      )}
+    </div>
+  );
+};
 
 const SlideArchetype = ({ stats }: any) => (
   <div className="text-center max-w-xl px-6 flex flex-col justify-center h-full mx-auto py-8">

@@ -48,6 +48,24 @@ export interface Capabilities {
   reactions: boolean;
 }
 
+export interface ReelsWatchEvent {
+  timestamp: number;
+  author?: string;
+}
+
+export interface ReelsWatchStats {
+  totalWatched: number;
+  peakMonth?: string;
+  peakHour?: number;
+  peakDayOfWeek?: string;
+  headlineJoke: string;
+}
+
+export interface ParsedInstagramExport {
+  conversations: InstaConversation[];
+  reelsEvents: ReelsWatchEvent[];
+}
+
 export interface WrappedStats {
   debug?: {
     totalRawMessages: number;
@@ -110,6 +128,7 @@ export interface WrappedStats {
 
   topConnections: ConnectionStat[];
   
+  reelsWatchedStats?: ReelsWatchStats | null;
   archetype: {
     title: string;
     description: string;
