@@ -1,4 +1,3 @@
-import React from 'react';
 import { motion } from 'framer-motion';
 import type { WrappedStats } from '../types/instagram';
 
@@ -149,74 +148,6 @@ export const SlideCalendar = ({ stats }: { stats: WrappedStats }) => {
       <p className="text-center text-white/40 text-[11px] mt-4 uppercase tracking-widest font-semibold">
         Recent Daily Intensity
       </p>
-    </div>
-  );
-};
-
-export const SlideTopRankings = ({ stats, showNames }: { stats: WrappedStats, showNames?: boolean }) => {
-  const [activeRank, setActiveRank] = React.useState(0);
-  
-  React.useEffect(() => {
-    const i = setInterval(() => {
-      setActiveRank(prev => (prev + 1) % 3);
-    }, 2800); 
-    return () => clearInterval(i);
-  }, []);
-
-  const rankings = [
-    { title: "MOST MESSAGED", data: stats.top5Messaged, val: (c: any) => `${c.messageCount.toLocaleString()} msgs` },
-    { title: "MOST CONSISTENT", data: stats.top5Consistent, val: (c: any) => `${c.activeDays} days active` },
-    { title: "MOST SHARED MEDIA", data: stats.top5Media, val: (c: any) => `${c.mediaShared.toLocaleString()} items` }
-  ];
-
-  const current = rankings[activeRank];
-
-  return (
-    <div className="w-full px-4 md:px-8 flex flex-col justify-center h-full max-w-lg mx-auto py-6">
-      <div className="text-center mb-6">
-        <p className="text-xs md:text-sm font-bold tracking-[0.25em] text-white/50 uppercase mb-2">Category Leaders</p>
-        <motion.h2 
-          key={current.title}
-          initial={{ opacity: 0, y: 5 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-2xl md:text-4xl font-black tracking-tighter text-white"
-        >
-          {current.title}
-        </motion.h2>
-      </div>
-
-      <div className="space-y-3">
-        {current.data.slice(0, 5).map((conn, idx) => (
-          <motion.div 
-            key={conn.name + current.title}
-            initial={{ opacity: 0, x: -15 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: idx * 0.08 }}
-            className="flex items-center justify-between p-3.5 md:p-4 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-md"
-          >
-            <div className="flex items-center gap-3 md:gap-4 truncate mr-2">
-              <span className="text-lg md:text-xl font-black text-white/30">#{idx + 1}</span>
-              <span className="text-base md:text-xl font-bold tracking-tight truncate text-white">
-                {showNames ? conn.name : 'Hidden'}
-              </span>
-            </div>
-            <span className="text-xs md:text-sm font-semibold text-white/70 whitespace-nowrap bg-white/10 px-2.5 py-1 rounded-full">
-              {current.val(conn)}
-            </span>
-          </motion.div>
-        ))}
-      </div>
-      
-      {/* Pips indicator */}
-      <div className="flex justify-center gap-2 mt-6">
-        {rankings.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => setActiveRank(i)}
-            className={`h-1.5 rounded-full transition-all duration-300 ${i === activeRank ? 'w-8 bg-white' : 'w-2 bg-white/25'}`}
-          />
-        ))}
-      </div>
     </div>
   );
 };

@@ -381,9 +381,6 @@ export const calculateStats = (conversations: InstaConversation[], exportRange: 
 
   // New Insights Processing
   const allConnectionsArray = Array.from(connectionsMap.values());
-  const top5Messaged = [...allConnectionsArray].sort((a, b) => b.messageCount - a.messageCount).slice(0, 5);
-  const top5Consistent = [...allConnectionsArray].sort((a, b) => b.activeDays - a.activeDays).slice(0, 5);
-  const top5Media = [...allConnectionsArray].sort((a, b) => b.mediaShared - a.mediaShared).slice(0, 5);
 
   const socialCalendar = Array.from(dailyActivity.entries()).map(([date, counts]) => ({
     date,
@@ -438,9 +435,6 @@ export const calculateStats = (conversations: InstaConversation[], exportRange: 
       startDate: globalMaxStreakStart,
       endDate: globalMaxStreakEnd
     } : null,
-    top5Messaged,
-    top5Consistent,
-    top5Media,
     monthlyTopConnections,
     allConnections: allConnectionsArray
   };

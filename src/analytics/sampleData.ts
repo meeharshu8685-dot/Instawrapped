@@ -47,9 +47,6 @@ export const sampleStats: WrappedStats = {
     startDate: '2025-05-12',
     endDate: '2025-06-28'
   },
-  top5Messaged: [],
-  top5Consistent: [],
-  top5Media: [],
   monthlyTopConnections: [],
   allConnections: [],
   archetype: {

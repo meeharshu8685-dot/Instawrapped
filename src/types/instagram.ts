@@ -105,9 +105,6 @@ export interface WrappedStats {
     startDate: string;
     endDate: string;
   } | null;
-  top5Messaged: ConnectionStat[];
-  top5Consistent: ConnectionStat[];
-  top5Media: ConnectionStat[];
   monthlyTopConnections: { month: string; name: string; count: number }[];
   allConnections: ConnectionStat[];
 

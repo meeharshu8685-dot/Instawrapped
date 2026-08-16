@@ -7,7 +7,7 @@ import ShareMenu from './ShareMenu';
 import { VideoModal } from './VideoModal';
 import { LayoutGrid, Eye, EyeOff, Volume2, VolumeX, Share, Film, RotateCcw, Sparkles } from 'lucide-react';
 import { shareElementAsImage } from '../utils/shareUtils';
-import { SlideSocialCircle, SlideCalendar, SlideTopRankings, SlideStreak as SlideAdvancedStreak, SlideMonthly } from './WrappedStoryAdvancedSlides';
+import { SlideSocialCircle, SlideCalendar, SlideStreak as SlideAdvancedStreak, SlideMonthly } from './WrappedStoryAdvancedSlides';
 
 const SLIDE_THEMES = [
   '#3B5998', // 0: Intro (Royal Blue)
@@ -19,7 +19,6 @@ const SLIDE_THEMES = [
   '#E53935', // 6: Peak (Red)
   '#5851DB', // 7: Streak (Indigo)
   '#4A154B', // 8: Monthly (Rich Plum)
-  '#0D5C75', // 9: Multiple Rankings (Deep Ocean)
   '#D81B60', // 10: Archetype (Crimson)
   '#1B0C2E'  // 11: Share/End (Deep Cosmic Purple with glow)
 ];
@@ -34,7 +33,6 @@ const SLIDE_MARQUEES = [
   'PEAK ACTIVITY',
   'LONGEST STREAK',
   'MONTH BY MONTH',
-  'TOP RANKINGS',
   'YOUR ARCHETYPE',
   'YOUR WRAPPED IS READY'
 ];
@@ -51,7 +49,7 @@ const ScrollingMarquee = ({ text }: { text: string }) => {
           animate={{ x: i % 2 === 0 ? '-50%' : '0%' }}
           transition={{ duration: 25 + i * 2, repeat: Infinity, ease: 'linear' }}
         >
-          {text} • {text} • {text} • {text} • {text} • {text}
+          {text} ï¿½ {text} ï¿½ {text} ï¿½ {text} ï¿½ {text} ï¿½ {text}
         </motion.div>
       ))}
     </div>
@@ -108,7 +106,7 @@ const WrappedStory: React.FC<Props> = ({ stats, onReset, onExplore }) => {
     
     if (stats.longestDayStreak) slides.push({ id: 'streak', component: SlideAdvancedStreak });
     if (stats.monthlyTopConnections?.length > 0) slides.push({ id: 'monthly', component: SlideMonthly });
-    slides.push({ id: 'rankings', component: SlideTopRankings });
+    
     
     // Optional extra density/midnight slides
     if (stats.fastestDensity) slides.push({ id: 'density', component: SlideDensity });
@@ -721,7 +719,7 @@ const SlideShare = ({ stats, showNames, onExplore, onShareClick, onDownloadVideo
             <RotateCcw className="w-3.5 h-3.5" /> Replay
           </button>
 
-          <span className="text-white/20">•</span>
+          <span className="text-white/20">ï¿½</span>
 
           <button 
             onClick={onExplore}
